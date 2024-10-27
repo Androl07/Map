@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Map with Search and Filter</title>
     
+    <!-- Підключення стилів Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    
+    <!-- Підключення бібліотек -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -55,17 +58,30 @@
         .filter-option.selected {
             font-weight: bold;
         }
+
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 90vh;
+        }
     </style>
 </head>
 <body>
 
-    <input type="file" id="upload" accept=".xlsx, .xls" style="position: fixed; top: 10px; left: 10px; z-index: 1000;" />
-    <div id="map" style="width: 100%; height: 90vh;"></div>
+    <div id="map"></div>
     <ul id="search-results"></ul>
 
     <script>
+        const url = 'https://raw.githubusercontent.com/Androl07/Map/main/Data.xlsx'; // RAW-посилання на Excel
+
         const map = L.map('map').setView([49.265571, 35.091304], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
 
         let markers = [];
 
@@ -91,44 +107,46 @@
             marker.addTo(map);
         }
 
-        document.getElementById('upload').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
+        function loadExcelData() {
+            fetch(url)
+                .then(response => response.arrayBuffer())
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet);
 
-            reader.onload = function(event) {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(sheet);
+                    console.log('Дані з Excel:', json); // Перевірка даних у консолі
 
-                json.forEach(row => {
-                    const coords = [parseFloat(row.Latitude), parseFloat(row.Longitude)];
-                    const markerData = {
-                        name: row.Name,
-                        coords: coords,
-                        type: row.Type,
-                        link: row.Link || '#',
-                        image: row.Image || ''
-                    };
-                    createMarker(markerData);
-                });
-            };
-            reader.readAsArrayBuffer(file);
-        });
+                    json.forEach(row => {
+                        const coords = [parseFloat(row.Latitude), parseFloat(row.Longitude)];
+                        const markerData = {
+                            name: row.Name,
+                            coords: coords,
+                            type: row.Type,
+                            link: row.Link || '#',
+                            image: row.Image || ''
+                        };
+                        createMarker(markerData);
+                    });
+                })
+                .catch(error => console.error('Помилка завантаження Excel:', error));
+        }
 
-        document.getElementById('searchBox').addEventListener('input', function(e) {
+        document.getElementById('searchBox').addEventListener('input', function (e) {
             const value = e.target.value.toLowerCase();
             const results = markers.filter(({ marker }) => marker.getPopup().getContent().toLowerCase().includes(value)).slice(0, 5);
             const resultList = document.getElementById('search-results');
             resultList.innerHTML = '';
             results.forEach(({ marker }) => {
                 const li = document.createElement('li');
-                li.textContent = marker.getPopup().getContent();
+                li.innerHTML = `<img src="${marker.getPopup().getContent().image}"><span>${marker.getPopup().getContent().name}</span>`;
                 li.addEventListener('click', () => map.setView(marker.getLatLng(), 12));
                 resultList.appendChild(li);
             });
             resultList.style.display = results.length > 0 ? 'block' : 'none';
         });
+
+        loadExcelData(); // Завантаження даних з Excel під час завантаження сторінки
     </script>
 
 </body>
