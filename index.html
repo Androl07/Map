@@ -7,65 +7,110 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        #map { height: 100vh; }
-
-        /* Стилі для випадаючого фільтра */
+        /* Стили для фільтра із значками */
         .filter-option {
             display: flex;
             align-items: center;
             padding: 5px 0;
-            cursor: pointer;
         }
         .filter-option img {
             margin-right: 10px;
             width: 20px;
         }
-        #filter-dropdown {
+        /* Стили для пошукового списку з картинками */
+        #search-results {
             display: none;
             position: fixed;
-            top: 60px;
-            right: 10px;
+            top: 50px;
+            left: 10px;
             z-index: 1000;
             background: white;
-            padding: 10px;
+            list-style: none;
+            padding: 0;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            width: 350px;
         }
-        #filter-icon {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
+        #search-results li {
+            display: flex;
+            align-items: center;
+            padding: 10px;
             cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+        #search-results li img {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+        #search-results li:hover {
+            background-color: #f0f0f0;
+        }
+        .popup-title a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .popup-title a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
+    <div id="map" style="width: 100%; height: 100vh;"></div>
 
-    <div id="map"></div>
-
-    <div id="filter-icon">
+    <!-- Іконка фільтра -->
+    <div id="filter-icon" style="
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        cursor: pointer;
+    ">
         <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
     </div>
 
-    <div id="filter-dropdown">
-        <div class="filter-option" data-type="all">
-            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png" />
-            <span>Show all</span>
-        </div>
-        <div class="filter-option" data-type="minor damage">
+    <!-- Випадаючий список для фільтра -->
+    <div id="filter-dropdown" style="
+        display: none;
+        position: fixed;
+        top: 60px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    ">
+        <div class="filter-option">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
             <span>minor damage</span>
         </div>
-        <div class="filter-option" data-type="significant damage">
+        <div class="filter-option">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png" />
             <span>significant damage</span>
         </div>
-        <div class="filter-option" data-type="destroyed">
+        <div class="filter-option">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" />
             <span>destroyed</span>
         </div>
     </div>
+
+    <!-- Пошукове поле -->
+    <input id="searchBox" type="text" placeholder="Search for location..." style="
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        width: 300px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    ">
+
+    <ul id="search-results"></ul>
 
     <script>
         var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
@@ -73,46 +118,50 @@
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         var markersData = [
-            { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage" },
-            { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage" },
-            { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed" }
+            { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
+            { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
+            { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", link: "https://elevatorist.com/spetsproekt/192.html", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" }
         ];
 
-        var markers = markersData.map(data => {
-            var marker = L.marker(data.coords, {
+        function getColor(type) {
+            return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
+        }
+
+        markersData.forEach(function(data) {
+            L.marker(data.coords, {
                 icon: L.icon({
                     iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`,
                     iconSize: [25, 41],
                     iconAnchor: [12, 41]
                 })
-            }).bindPopup(`<b>${data.name}</b>`).addTo(map);
-            return { marker, type: data.type };
+            }).bindPopup(`
+                <div style="max-width: 250px;">
+                    <div class="popup-title">
+                        <a href="${data.link}" target="_blank">${data.name}</a>
+                    </div>
+                    <img src="${data.image}" style="width: 100%; border-radius: 5px;">
+                </div>
+            `).addTo(map);
         });
 
-        function getColor(type) {
-            return type === 'minor damage' ? 'green' :
-                   type === 'significant damage' ? 'orange' : 'red';
-        }
+        document.getElementById('searchBox').addEventListener('input', function(e) {
+            var value = e.target.value.toLowerCase();
+            var results = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
+            var resultList = document.getElementById('search-results');
+            resultList.innerHTML = '';
+            results.forEach(result => {
+                var li = document.createElement('li');
+                li.innerHTML = `<img src="${result.image}" /><span>${result.name}</span>`;
+                li.addEventListener('click', () => map.setView(result.coords, 12));
+                resultList.appendChild(li);
+            });
+            resultList.style.display = results.length > 0 ? 'block' : 'none';
+        });
 
         document.getElementById('filter-icon').addEventListener('click', function() {
             var dropdown = document.getElementById('filter-dropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
-
-        document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function() {
-                var type = this.getAttribute('data-type');
-                markers.forEach(({ marker, type: markerType }) => {
-                    if (type === 'all' || markerType === type) {
-                        marker.addTo(map);
-                    } else {
-                        map.removeLayer(marker);
-                    }
-                });
-                document.getElementById('filter-dropdown').style.display = 'none';
-            });
-        });
     </script>
-
 </body>
 </html>
