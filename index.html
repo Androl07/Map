@@ -24,9 +24,9 @@
         <label for="filter">Фільтр за типом пошкодження:</label>
         <select id="filter">
             <option value="all">Всі</option>
-            <option value="minor damage">Мінімальні пошкодження</option>
-            <option value="significant damage">Значні пошкодження</option>
-            <option value="destroyed">Знищено</option>
+            <option value="minor damage" style="color: green;">🟢 Мінімальні пошкодження</option>
+            <option value="significant damage" style="color: orange;">🟠 Значні пошкодження</option>
+            <option value="destroyed" style="color: red;">🔴 Знищено</option>
         </select>
     </div>
 
@@ -110,7 +110,6 @@
             }).bindPopup(`
                 <div style="max-width: 250px;">
                     <b>${data.name}</b><br>
-                    <b>Тип пошкодження:</b> ${data.type}<br>
                     <a href="${data.link}" target="_blank">Перейти за посиланням</a><br>
                     <img src="${data.image}" style="width: 100%; border-radius: 5px;">
                 </div>
@@ -122,9 +121,10 @@
         // Обробка пошуку
         document.getElementById('searchBox').addEventListener('input', function(e) {
             var value = e.target.value.toLowerCase();
-            var found = markersData.find(data => data.name.toLowerCase().includes(value));
-            if (found) {
-                map.setView(found.coords, 12);
+            var filteredMarkers = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
+            if (filteredMarkers.length > 0) {
+                var firstMatch = filteredMarkers[0];
+                map.setView(firstMatch.coords, 12);
             }
         });
 
