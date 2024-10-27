@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        /* Пошуковий список із фото */
         #search-results {
             display: none;
             position: fixed;
@@ -37,8 +36,6 @@
         #search-results li:hover {
             background-color: #f0f0f0;
         }
-
-        /* Фільтр */
         .filter-option {
             display: flex;
             align-items: center;
@@ -56,30 +53,10 @@
 </head>
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
-
-    <!-- Іконка фільтра -->
-    <div id="filter-icon" style="
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        z-index: 1000;
-        cursor: pointer;
-    ">
+    <div id="filter-icon" style="position: fixed; top: 10px; right: 10px; z-index: 1000; cursor: pointer;">
         <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
     </div>
-
-    <!-- Випадаючий список фільтра -->
-    <div id="filter-dropdown" style="
-        display: none;
-        position: fixed;
-        top: 60px;
-        right: 10px;
-        z-index: 1000;
-        background: white;
-        padding: 10px;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    ">
+    <div id="filter-dropdown" style="display: none; position: fixed; top: 60px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);">
         <div class="filter-option" data-type="minor damage">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
             <span>Minor Damage</span>
@@ -93,20 +70,7 @@
             <span>Destroyed</span>
         </div>
     </div>
-
-    <!-- Пошукове поле -->
-    <input id="searchBox" type="text" placeholder="Search for location..." style="
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        z-index: 1000;
-        width: 300px;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    ">
-
+    <input id="searchBox" type="text" placeholder="Search for location..." style="position: fixed; top: 10px; left: 10px; z-index: 1000; width: 300px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);" />
     <ul id="search-results"></ul>
 
     <script>
@@ -114,11 +78,23 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        var markersData = [
-            { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
-            { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
-            { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", link: "https://elevatorist.com/spetsproekt/192.html", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" }
-        ];
+       var markersData = [
+    { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
+    { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg" },
+    { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489-na-teritorii-silgosppidpriemstva-na-harkivsini-vnaslidok-obstrilu-zgoriv-kombajn.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
+    { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", link: "https://elevatorist.com/spetsproekt/192.html", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" },
+    { name: "Kupyansky KHP", coords: [49.821708, 36.675346], type: "significant damage", link: "https://kupiansk.city/articles/250909/pidstupni-udari-voroga-po-civilnih-obyektah-foto", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" },
+    { name: "Agricultural object", coords: [49.708915, 37.576864], type: "significant damage", link: "https://suspilne.media/316828-vnaslidok-obstrilu-14-listopada-na-harkivsini-gorili-psenica-ta-nasinna-sonasniku/", image: "https://cdn4.suspilne.media/images/resize/1040x1.78/59e6b97a4c311936.jpg" },
+    { name: "Agricultural object", coords: [49.687982, 37.168194], type: "significant damage", link: "https://elevatorist.com/novosti/15605-vorogi-obstrilyali-elevatori-na-harkivschini", image: "https://elevatorist.com/media/news/original/00/15/15605/obstrel-30785.jpg" },
+    { name: "Granary", coords: [49.731096, 36.869725], type: "significant damage", link: "https://elevatorist.com/novosti/15413-na-harkivschini-likvidovano-pojeju-na-elevatori", image: "https://elevatorist.com/media/news/original/00/15/15413/pojar-30562.png" },
+    { name: "Farm buildings", coords: [50.311774, 35.728447], type: "significant damage", link: "https://www.ukrinform.ua/rubric-regions/3686728-na-harkivsini-cerez-obstrili-poskodzeni-lep-i-fermerske-gospodarstvo.html", image: "https://static.ukrinform.com/photos/2023_03/thumb_files/630_360_1679641717-731.jpeg" },
+    { name: "Local agricultural enterprise", coords: [49.309162, 37.850988], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3708428-rosiani-obstrilali-z-artilerii-selo-na-harkivsini-e-zagiblij.html", image: "https://static.ukrinform.com/photos/2023_05/1683905897-230.jpg" },
+    { name: "Field", coords: [48.929358, 36.883189], type: "minor damage", link: "https://agronews.ua/news/na-harkivshhyni-na-protytankovij-mini-pidirvavsya-kombajn/", image: "https://agronews.ua/wp-content/uploads/2023/09/647-623x370.jpg" },
+    { name: "Field", coords: [49.349191, 36.737711], type: "significant damage", link: "https://agronews.ua/news/na-harkivshhyni-stvoryly-shhe-odnu-bezpilotnu-mashynu-dlya-rozminuvannya-poliv/", image: "https://agronews.ua/wp-content/uploads/2023/07/drakon-5746-623x370.jpg" },
+    { name: "Agrocombined 'Slobozhanskyi'", coords: [49.711463, 36.925471], type: "destroyed", link: "https://agronews.ua/news/na-harkivshhyni-zagynulo-60-tys-tvaryn/", image: "https://agronews.ua/wp-content/uploads/2023/04/ferma-33132-623x370.jpg" },
+    { name: "Field", coords: [49.715394, 36.829959], type: "minor damage", link: "https://dumka.media/ukr/war/1694085602-prorvati-sutsilniy-poyas-minuvannya-yak-agrariyi-navchilisya-znimati-rosiyski-mini-v-harkivskiy-oblasti", image: "https://dumka.media/static/ckef/img/373394838_237518418817489_3916670008170820135_n.jpg" },
+    // Продовжити для всіх 82 об'єктів...
+];
 
         var markers = [];
         markersData.forEach(function(data) {
