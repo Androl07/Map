@@ -11,9 +11,10 @@
         .filter-option {
             display: flex;
             align-items: center;
+            padding: 5px 0;
         }
         .filter-option img {
-            margin-right: 5px;
+            margin-right: 10px;
             width: 20px;
         }
         /* Стили для пошукового списку */
@@ -37,6 +38,15 @@
         }
         #search-results li:hover {
             background-color: #f0f0f0;
+        }
+        /* Стили для посилання в попапі */
+        .popup-title a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .popup-title a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -66,21 +76,22 @@
         border-radius: 5px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     ">
-        <select id="filter" style="width: 100%;">
-            <option value="all">All</option>
-            <option value="minor damage" class="filter-option">
-                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png">
-                Minor Damage
-            </option>
-            <option value="significant damage" class="filter-option">
-                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png">
-                Significant Damage
-            </option>
-            <option value="destroyed" class="filter-option">
-                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png">
-                Destroyed
-            </option>
-        </select>
+        <div class="filter-option">
+            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png" />
+            <span>Type of Damage</span>
+        </div>
+        <div class="filter-option">
+            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
+            <span>Minor Damage</span>
+        </div>
+        <div class="filter-option">
+            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png" />
+            <span>Significant Damage</span>
+        </div>
+        <div class="filter-option">
+            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" />
+            <span>Destroyed</span>
+        </div>
     </div>
 
     <!-- Пошукове поле -->
@@ -104,7 +115,6 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Дані про об'єкти
         var markersData = [
             { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
             { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
@@ -121,8 +131,9 @@
                 icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, iconSize: [25, 41], iconAnchor: [12, 41] })
             }).bindPopup(`
                 <div style="max-width: 250px;">
-                    <b>${data.name}</b><br>
-                    <a href="${data.link}" target="_blank">Перейти за посиланням</a><br>
+                    <div class="popup-title">
+                        <a href="${data.link}" target="_blank">${data.name}</a>
+                    </div>
                     <img src="${data.image}" style="width: 100%; border-radius: 5px;">
                 </div>
             `).addTo(map);
@@ -132,13 +143,6 @@
         document.getElementById('filter-icon').addEventListener('click', function() {
             var dropdown = document.getElementById('filter-dropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        });
-
-        document.getElementById('filter').addEventListener('change', function(e) {
-            var selectedType = e.target.value;
-            markers.forEach(function(obj) {
-                selectedType === 'all' || obj.type === selectedType ? obj.marker.addTo(map) : map.removeLayer(obj.marker);
-            });
         });
 
         document.getElementById('searchBox').addEventListener('input', function(e) {
