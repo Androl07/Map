@@ -81,7 +81,7 @@
     <ul id="search-results"></ul>
 
     <script>
-        const url = 'https://raw.githubusercontent.com/Androl07/Map/main/Data.xlsx';
+        const url = 'https://api.github.com/repos/Androl07/Map/contents/Data.xlsx';
 
         let markers = [];
 
@@ -108,9 +108,17 @@
 
         function loadExcelData(map) {
             fetch(url)
-                .then(response => response.arrayBuffer())
+                .then(response => response.json())
                 .then(data => {
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    const base64 = data.content;
+                    const binary = atob(base64);
+                    const buffer = new Uint8Array(binary.length);
+
+                    for (let i = 0; i < binary.length; i++) {
+                        buffer[i] = binary.charCodeAt(i);
+                    }
+
+                    const workbook = XLSX.read(buffer, { type: 'array' });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
                     const json = XLSX.utils.sheet_to_json(sheet);
 
