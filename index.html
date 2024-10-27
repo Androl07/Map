@@ -17,7 +17,7 @@
             margin-right: 10px;
             width: 20px;
         }
-        /* Стили для пошукового списку */
+        /* Стили для пошукового списку з картинками */
         #search-results {
             display: none;
             position: fixed;
@@ -29,17 +29,24 @@
             padding: 0;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            width: 300px;
+            width: 350px;
         }
         #search-results li {
+            display: flex;
+            align-items: center;
             padding: 10px;
             cursor: pointer;
             border-bottom: 1px solid #ddd;
         }
+        #search-results li img {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
         #search-results li:hover {
             background-color: #f0f0f0;
         }
-        /* Стили для посилання в попапі */
         .popup-title a {
             color: #1a73e8;
             text-decoration: none;
@@ -77,20 +84,16 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     ">
         <div class="filter-option">
-            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png" />
-            <span>Type of Damage</span>
-        </div>
-        <div class="filter-option">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
-            <span>Minor Damage</span>
+            <span>minor damage</span>
         </div>
         <div class="filter-option">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png" />
-            <span>Significant Damage</span>
+            <span>significant damage</span>
         </div>
         <div class="filter-option">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" />
-            <span>Destroyed</span>
+            <span>destroyed</span>
         </div>
     </div>
 
@@ -110,7 +113,6 @@
     <ul id="search-results"></ul>
 
     <script>
-        // Ініціалізація карти
         var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -125,10 +127,13 @@
             return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
         }
 
-        var markers = [];
         markersData.forEach(function(data) {
-            var marker = L.marker(data.coords, {
-                icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, iconSize: [25, 41], iconAnchor: [12, 41] })
+            L.marker(data.coords, {
+                icon: L.icon({
+                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`,
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41]
+                })
             }).bindPopup(`
                 <div style="max-width: 250px;">
                     <div class="popup-title">
@@ -137,12 +142,6 @@
                     <img src="${data.image}" style="width: 100%; border-radius: 5px;">
                 </div>
             `).addTo(map);
-            markers.push({ marker, type: data.type });
-        });
-
-        document.getElementById('filter-icon').addEventListener('click', function() {
-            var dropdown = document.getElementById('filter-dropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
 
         document.getElementById('searchBox').addEventListener('input', function(e) {
@@ -152,11 +151,16 @@
             resultList.innerHTML = '';
             results.forEach(result => {
                 var li = document.createElement('li');
-                li.textContent = result.name;
+                li.innerHTML = `<img src="${result.image}" /><span>${result.name}</span>`;
                 li.addEventListener('click', () => map.setView(result.coords, 12));
                 resultList.appendChild(li);
             });
             resultList.style.display = results.length > 0 ? 'block' : 'none';
+        });
+
+        document.getElementById('filter-icon').addEventListener('click', function() {
+            var dropdown = document.getElementById('filter-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
     </script>
 </body>
