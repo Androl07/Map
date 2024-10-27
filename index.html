@@ -6,6 +6,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        /* Стили для фільтра із значками */
+        .filter-option {
+            display: flex;
+            align-items: center;
+        }
+        .filter-option img {
+            margin-right: 5px;
+            width: 20px;
+        }
+        /* Стили для пошукового списку */
+        #search-results {
+            display: none;
+            position: fixed;
+            top: 50px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            list-style: none;
+            padding: 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            width: 300px;
+        }
+        #search-results li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+        #search-results li:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
@@ -35,13 +68,16 @@
     ">
         <select id="filter" style="width: 100%;">
             <option value="all">All</option>
-            <option value="minor damage" style="background-image: url('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png');">
+            <option value="minor damage" class="filter-option">
+                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png">
                 Minor Damage
             </option>
-            <option value="significant damage" style="background-image: url('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png');">
+            <option value="significant damage" class="filter-option">
+                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png">
                 Significant Damage
             </option>
-            <option value="destroyed" style="background-image: url('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png');">
+            <option value="destroyed" class="filter-option">
+                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png">
                 Destroyed
             </option>
         </select>
@@ -60,77 +96,29 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     ">
 
-    <ul id="search-results" style="
-        display: none;
-        position: fixed;
-        top: 50px;
-        left: 10px;
-        z-index: 1000;
-        background: white;
-        list-style: none;
-        padding: 0;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        width: 300px;
-    "></ul>
+    <ul id="search-results"></ul>
 
     <script>
         // Ініціалізація карти
-        var map = L.map('map', {
-            zoomControl: false  // Вимикаємо стандартний контроль масштабу
-        }).setView([49.265571, 35.091304], 6);
+        var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-
-        L.control.zoom({
-            position: 'bottomright'
-        }).addTo(map);
-
+        // Дані про об'єкти
         var markersData = [
-            {
-                name: "Agricultural firm 'Noviy Shlyach'",
-                coords: [49.265571, 35.091304],
-                type: "minor damage",
-                link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html",
-                image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg"
-            },
-            {
-                name: "Agricultural enterprises",
-                coords: [50.178885, 37.516905],
-                type: "significant damage",
-                link: "https://www.ukrinform.ua/rubric-ato/3760489-na-teritorii-silgosppidpriemstva-na-harkivsini-vnaslidok-obstrilu-zgoriv-kombajn.html",
-                image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg"
-            },
-            {
-                name: "Hrakiv elevator Novaagro",
-                coords: [50.17398, 35.354574],
-                type: "destroyed",
-                link: "https://elevatorist.com/spetsproekt/192-grakivskiy-elevator-novaagro-yak-ryatuvali-zerno-iz-palayuchih-pislya-obstriliv-silosiv",
-                image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg"
-            }
+            { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
+            { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
+            { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", link: "https://elevatorist.com/spetsproekt/192.html", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" }
         ];
 
         function getColor(type) {
-            switch (type) {
-                case 'minor damage': return 'green';
-                case 'significant damage': return 'orange';
-                case 'destroyed': return 'red';
-                default: return 'blue';
-            }
+            return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
         }
 
         var markers = [];
-
         markersData.forEach(function(data) {
             var marker = L.marker(data.coords, {
-                icon: L.icon({
-                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`,
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34]
-                })
+                icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, iconSize: [25, 41], iconAnchor: [12, 41] })
             }).bindPopup(`
                 <div style="max-width: 250px;">
                     <b>${data.name}</b><br>
@@ -149,11 +137,7 @@
         document.getElementById('filter').addEventListener('change', function(e) {
             var selectedType = e.target.value;
             markers.forEach(function(obj) {
-                if (selectedType === 'all' || obj.type === selectedType) {
-                    obj.marker.addTo(map);
-                } else {
-                    map.removeLayer(obj.marker);
-                }
+                selectedType === 'all' || obj.type === selectedType ? obj.marker.addTo(map) : map.removeLayer(obj.marker);
             });
         });
 
