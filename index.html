@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Interactive Map with Search and Filter</title>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Map with Search and Filter</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <style>
         /* Пошуковий список із фото */
         #search-results {
@@ -56,40 +58,23 @@
     </style>
 </head>
 <body>
-    <div id="map" style="width: 100%; height: 100vh;"></div>
 
-    <div id="filter-icon" style="position: fixed; top: 10px; right: 10px; z-index: 1000; cursor: pointer;">
-        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
-    </div>
-
-    <div id="filter-dropdown" style="display: none; position: fixed; top: 60px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);">
-        <div class="filter-option" data-type="minor damage">
-            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
-            <span>Minor Damage</span>
-        </div>
-        <div class="filter-option" data-type="significant damage">
-            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png" />
-            <span>Significant Damage</span>
-        </div>
-        <div class="filter-option" data-type="destroyed">
-            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" />
-            <span>Destroyed</span>
-        </div>
-    </div>
-
-    <input id="searchBox" type="text" placeholder="Search for location..." style="position: fixed; top: 10px; left: 10px; z-index: 1000; width: 300px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);" />
+    <input type="file" id="upload" accept=".xlsx, .xls" style="position: fixed; top: 10px; left: 10px; z-index: 1000;" />
+    <div id="map" style="width: 100%; height: 90vh;"></div>
     <ul id="search-results"></ul>
 
     <script>
-        const url = 'https://raw.githubusercontent.com/Androl07/Map/main/Data.xlsx'; // Посилання на файл
+        const map = L.map('map').setView([49.265571, 35.091304], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
         let markers = [];
 
         function getColor(type) {
-            return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
+            return type === 'minor damage' ? 'green' :
+                   type === 'significant damage' ? 'orange' : 'red';
         }
 
-        function createMarker(data, map) {
+        function createMarker(data) {
             const marker = L.marker(data.coords, {
                 icon: L.icon({
                     iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`,
@@ -106,49 +91,32 @@
             marker.addTo(map);
         }
 
-        function loadExcelData(map) {
-            fetch(url)
-                .then(response => response.arrayBuffer())
-                .then(data => {
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(sheet);
+        document.getElementById('upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
 
-                    json.forEach(row => {
-                        const coords = [parseFloat(row.Latitude), parseFloat(row.Longitude)];
-                        const markerData = {
-                            name: row.Name,
-                            coords: coords,
-                            type: row.Type,
-                            link: row.Link,
-                            image: row.Image
-                        };
-                        createMarker(markerData, map);
-                    });
-                })
-                .catch(error => console.error('Error loading Excel:', error));
-        }
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet);
 
-        document.getElementById('filter-icon').addEventListener('click', () => {
-            const dropdown = document.getElementById('filter-dropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        });
-
-        document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function () {
-                option.classList.toggle('selected');
-                const selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
-                markers.forEach(({ marker, type }) => {
-                    if (selectedTypes.length === 0 || selectedTypes.includes(type)) {
-                        marker.addTo(map);
-                    } else {
-                        map.removeLayer(marker);
-                    }
+                json.forEach(row => {
+                    const coords = [parseFloat(row.Latitude), parseFloat(row.Longitude)];
+                    const markerData = {
+                        name: row.Name,
+                        coords: coords,
+                        type: row.Type,
+                        link: row.Link || '#',
+                        image: row.Image || ''
+                    };
+                    createMarker(markerData);
                 });
-            });
+            };
+            reader.readAsArrayBuffer(file);
         });
 
-        document.getElementById('searchBox').addEventListener('input', function (e) {
+        document.getElementById('searchBox').addEventListener('input', function(e) {
             const value = e.target.value.toLowerCase();
             const results = markers.filter(({ marker }) => marker.getPopup().getContent().toLowerCase().includes(value)).slice(0, 5);
             const resultList = document.getElementById('search-results');
@@ -161,12 +129,7 @@
             });
             resultList.style.display = results.length > 0 ? 'block' : 'none';
         });
-
-        const map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-        loadExcelData(map);
     </script>
+
 </body>
 </html>
