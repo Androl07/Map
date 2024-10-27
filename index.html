@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Map with Filter and Search</title>
+    <title>Interactive Map with Search and Filter</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
@@ -9,17 +9,7 @@
     <style>
         #map { height: 100vh; }
 
-        /* Стилі для фільтра */
-        #filter-dropdown {
-            position: fixed;
-            top: 60px;
-            right: 10px;
-            background: white;
-            z-index: 1000;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            padding: 10px;
-        }
+        /* Стилі для випадаючого фільтра */
         .filter-option {
             display: flex;
             align-items: center;
@@ -28,28 +18,40 @@
         }
         .filter-option img {
             margin-right: 10px;
-            width: 25px;
+            width: 20px;
         }
-        #searchBox {
+        #filter-dropdown {
+            display: none;
             position: fixed;
-            top: 10px;
-            left: 10px;
+            top: 60px;
+            right: 10px;
             z-index: 1000;
-            width: 300px;
+            background: white;
             padding: 10px;
             border-radius: 5px;
-            border: 1px solid #ccc;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        #filter-icon {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <input id="searchBox" type="text" placeholder="Search for location...">
+    <div id="map"></div>
+
+    <div id="filter-icon">
+        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
+    </div>
+
     <div id="filter-dropdown">
         <div class="filter-option" data-type="all">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png" />
-            <span>All</span>
+            <span>Show all</span>
         </div>
         <div class="filter-option" data-type="minor damage">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
@@ -65,35 +67,26 @@
         </div>
     </div>
 
-    <div id="map"></div>
-
     <script>
-        var map = L.map('map').setView([49.265571, 35.091304], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
-        }).addTo(map);
+        var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         var markersData = [
-            { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
-            { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
-            { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" }
+            { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage" },
+            { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage" },
+            { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed" }
         ];
 
-        var markers = [];
-        markersData.forEach(function(data) {
+        var markers = markersData.map(data => {
             var marker = L.marker(data.coords, {
                 icon: L.icon({
                     iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`,
                     iconSize: [25, 41],
                     iconAnchor: [12, 41]
                 })
-            }).bindPopup(`
-                <div>
-                    <b><a href="#" target="_blank" style="color: #1a73e8;">${data.name}</a></b><br>
-                    <img src="${data.image}" style="width: 100px; height: auto; border-radius: 5px;">
-                </div>
-            `).addTo(map);
-            markers.push({ marker, type: data.type });
+            }).bindPopup(`<b>${data.name}</b>`).addTo(map);
+            return { marker, type: data.type };
         });
 
         function getColor(type) {
@@ -101,27 +94,22 @@
                    type === 'significant damage' ? 'orange' : 'red';
         }
 
-        document.querySelectorAll('.filter-option').forEach(function(option) {
-            option.addEventListener('click', function() {
-                var type = this.getAttribute('data-type');
-                markers.forEach(function(data) {
-                    if (type === 'all' || data.type === type) {
-                        data.marker.addTo(map);
-                    } else {
-                        map.removeLayer(data.marker);
-                    }
-                });
-            });
+        document.getElementById('filter-icon').addEventListener('click', function() {
+            var dropdown = document.getElementById('filter-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
 
-        document.getElementById('searchBox').addEventListener('input', function(e) {
-            var value = e.target.value.toLowerCase();
-            markers.forEach(function(data) {
-                if (data.marker.getPopup().getContent().toLowerCase().includes(value)) {
-                    data.marker.addTo(map);
-                } else {
-                    map.removeLayer(data.marker);
-                }
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                var type = this.getAttribute('data-type');
+                markers.forEach(({ marker, type: markerType }) => {
+                    if (type === 'all' || markerType === type) {
+                        marker.addTo(map);
+                    } else {
+                        map.removeLayer(marker);
+                    }
+                });
+                document.getElementById('filter-dropdown').style.display = 'none';
             });
         });
     </script>
