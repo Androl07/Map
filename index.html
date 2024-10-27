@@ -10,18 +10,24 @@
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
 
-    <!-- Іконка фільтра -->
-    <div id="filter-icon" style="
+    <!-- Випадаючий список для фільтра -->
+    <div style="
         position: fixed;
         top: 10px;
         right: 10px;
         z-index: 1000;
         background: white;
         padding: 10px;
-        border-radius: 50%;
+        border-radius: 5px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        cursor: pointer;">
-        ⚙️
+    ">
+        <label for="filter">Фільтр за типом пошкодження:</label>
+        <select id="filter">
+            <option value="all">Всі</option>
+            <option value="minor damage">Мінімальні пошкодження</option>
+            <option value="significant damage">Значні пошкодження</option>
+            <option value="destroyed">Знищено</option>
+        </select>
     </div>
 
     <!-- Пошукове поле -->
@@ -43,7 +49,7 @@
             zoomControl: false  // Вимикаємо стандартний контроль масштабу
         }).setView([49.265571, 35.091304], 6);
 
-        // Додавання тайлів
+        // Додавання тайлів карти
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
         }).addTo(map);
@@ -88,8 +94,10 @@
             }
         }
 
-        // Додавання маркерів
+        // Масив для всіх маркерів
         var markers = [];
+
+        // Додавання маркерів на карту
         markersData.forEach(function(data) {
             var marker = L.marker(data.coords, {
                 icon: L.icon({
@@ -100,16 +108,18 @@
                     shadowSize: [41, 41]
                 })
             }).bindPopup(`
-                <b>${data.name}</b><br>
-                <b>Тип пошкодження:</b> ${data.type}<br>
-                <a href="${data.link}" target="_blank">Перейти за посиланням</a><br>
-                <img src="${data.image}" width="200px">
+                <div style="max-width: 250px;">
+                    <b>${data.name}</b><br>
+                    <b>Тип пошкодження:</b> ${data.type}<br>
+                    <a href="${data.link}" target="_blank">Перейти за посиланням</a><br>
+                    <img src="${data.image}" style="width: 100%; border-radius: 5px;">
+                </div>
             `).addTo(map);
 
-            markers.push(marker);
+            markers.push({ marker: marker, type: data.type });
         });
 
-        // Пошук об'єктів
+        // Обробка пошуку
         document.getElementById('searchBox').addEventListener('input', function(e) {
             var value = e.target.value.toLowerCase();
             var found = markersData.find(data => data.name.toLowerCase().includes(value));
@@ -118,14 +128,14 @@
             }
         });
 
-        // Обробка фільтрації при натисканні на іконку
-        document.getElementById('filter-icon').addEventListener('click', function() {
-            var selectedType = prompt('Введіть тип пошкодження (minor damage, significant damage, destroyed):');
-            markers.forEach(function(marker, index) {
-                if (selectedType === 'all' || markersData[index].type === selectedType) {
-                    marker.addTo(map);
+        // Обробка фільтрації
+        document.getElementById('filter').addEventListener('change', function(e) {
+            var selectedType = e.target.value;
+            markers.forEach(function(obj) {
+                if (selectedType === 'all' || obj.type === selectedType) {
+                    obj.marker.addTo(map);
                 } else {
-                    map.removeLayer(marker);
+                    map.removeLayer(obj.marker);
                 }
             });
         });
