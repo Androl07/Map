@@ -1,130 +1,44 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Interactive Map with Search and Filter</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <style>
-        #map {
-            width: 100%;
-            height: 100vh;
-        }
+<script>
+    var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
 
-        #search-results {
-            display: none;
-            position: fixed;
-            top: 50px;
-            left: 10px;
-            z-index: 1000;
-            background: white;
-            list-style: none;
-            padding: 0;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-            width: 300px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
+    // Додаємо базовий шар з OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-        #search-results li {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            cursor: pointer;
-            border-bottom: 1px solid #ddd;
-        }
+    // Створюємо полігон маски
+    var outer = [
+        [90, -180], [90, 180], [-90, 180], [-90, -180]  // Весь світ
+    ];
 
-        #search-results img {
-            margin-right: 10px;
-            width: 40px;
-            height: 40px;
-            border-radius: 5px;
-        }
+    var ukraine = [
+        [52.379, 22.137], [52.379, 40.227], [44.386, 40.227], [44.386, 22.137]  // Контур України
+    ];
 
-        #search-results li:hover {
-            background-color: #f0f0f0;
-        }
+    // Створюємо інверсійний полігон (зовнішній - білий, Україна - прозора)
+    L.polygon([outer, ukraine], {
+        color: 'white',
+        fillOpacity: 1,
+        stroke: false
+    }).addTo(map);
 
-        /* Маска для карти */
-        .leaflet-overlay-pane svg {
-            background: white;
-        }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
+    // Додавання маркерів для тесту
+    var markersData = [
+        { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
+        { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg" }
+    ];
 
-    <input id="searchBox" type="text" placeholder="Search for location..." 
-        style="position: fixed; top: 10px; left: 10px; z-index: 1000; width: 300px; padding: 10px; 
-        border-radius: 5px; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);" />
+    var markers = [];
+    markersData.forEach(function (data) {
+        var marker = L.marker(data.coords).bindPopup(`
+            <div style="max-width: 250px;">
+                <a href="${data.link}" target="_blank">${data.name}</a>
+                <img src="${data.image}" style="width: 100%; border-radius: 5px;">
+            </div>
+        `).addTo(map);
+        markers.push(marker);
+    });
 
-    <ul id="search-results"></ul>
-
-    <script>
-        // Ініціалізація карти
-        var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
-        
-        // Додаємо тайл для карти
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 })
-            .on('tileerror', function (e) { console.error("Помилка завантаження карти:", e); })
-            .addTo(map);
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-        // Маска для території України
-        var mask = L.polygon([
-            [[90, -180], [90, 180], [-90, 180], [-90, -180]],  // Зовнішній прямокутник
-            [[52.379, 22.137], [52.379, 40.227], [44.386, 40.227], [44.386, 22.137]]  // Координати України
-        ], {
-            color: 'white',
-            fillOpacity: 1,
-            stroke: false
-        }).addTo(map);
-
-        // Дані для маркерів
-        var markersData = [
-            { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
-            { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg" }
-        ];
-
-        var markers = [];
-        markersData.forEach(function (data) {
-            var marker = L.marker(data.coords).bindPopup(`
-                <div style="max-width: 250px;">
-                    <a href="${data.link}" target="_blank">${data.name}</a>
-                    <img src="${data.image}" style="width: 100%; border-radius: 5px;">
-                </div>
-            `).addTo(map);
-            markers.push(marker);
-        });
-
-        // Приховування пошукового списку
-        function hideSearchResults() {
-            document.getElementById('search-results').style.display = 'none';
-        }
-
-        // Пошукове поле
-        document.getElementById('searchBox').addEventListener('input', function (e) {
-            var value = e.target.value.toLowerCase();
-            var results = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
-
-            var resultList = document.getElementById('search-results');
-            resultList.innerHTML = '';
-            results.forEach(result => {
-                var li = document.createElement('li');
-                li.innerHTML = `<img src="${result.image}"><span>${result.name}</span>`;
-                li.addEventListener('click', function () {
-                    map.setView(result.coords, 12);
-                    hideSearchResults();
-                });
-                resultList.appendChild(li);
-            });
-            resultList.style.display = results.length > 0 ? 'block' : 'none';
-        });
-
-        // Приховати результати при кліку на карту
-        map.on('click', hideSearchResults);
-    </script>
-</body>
-</html>
+    // Приховування пошукового списку при натисканні на карту
+    map.on('click', function () {
+        document.getElementById('search-results').style.display = 'none';
+    });
+</script>
