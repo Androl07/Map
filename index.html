@@ -81,7 +81,7 @@
     <ul id="search-results"></ul>
 
     <script>
-        const url = 'https://api.github.com/repos/Androl07/Map/contents/Data.xlsx';
+        const url = 'https://raw.githubusercontent.com/Androl07/Map/main/Data.xlsx'; // Посилання на файл
 
         let markers = [];
 
@@ -92,33 +92,25 @@
         function createMarker(data, map) {
             const marker = L.marker(data.coords, {
                 icon: L.icon({
-                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`,
+                    iconUrl: https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png,
                     iconSize: [25, 41],
                     iconAnchor: [12, 41]
                 })
-            }).bindPopup(`
+            }).bindPopup(
                 <div style="max-width: 250px;">
                     <a href="${data.link}" target="_blank">${data.name}</a>
                     <img src="${data.image}" style="width: 100%; border-radius: 5px;">
                 </div>
-            `);
+            );
             markers.push({ marker, type: data.type });
             marker.addTo(map);
         }
 
         function loadExcelData(map) {
             fetch(url)
-                .then(response => response.json())
+                .then(response => response.arrayBuffer())
                 .then(data => {
-                    const base64 = data.content;
-                    const binary = atob(base64);
-                    const buffer = new Uint8Array(binary.length);
-
-                    for (let i = 0; i < binary.length; i++) {
-                        buffer[i] = binary.charCodeAt(i);
-                    }
-
-                    const workbook = XLSX.read(buffer, { type: 'array' });
+                    const workbook = XLSX.read(data, { type: 'array' });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
                     const json = XLSX.utils.sheet_to_json(sheet);
 
