@@ -8,25 +8,49 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 </head>
 <body>
-    <div id="map" style="width: 100%; height: 600px;"></div>
+    <div id="map" style="width: 100%; height: 100vh;"></div>
 
-    <div style="position: fixed; top: 10px; left: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px;">
-        <label for="filter">Фільтр за типом пошкодження:</label>
-        <select id="filter">
-            <option value="all">Всі</option>
-            <option value="minor damage">Мінімальні пошкодження</option>
-            <option value="significant damage">Значні пошкодження</option>
-            <option value="destroyed">Знищено</option>
-        </select>
+    <!-- Іконка фільтра -->
+    <div id="filter-icon" style="
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 10px;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        cursor: pointer;">
+        ⚙️
     </div>
+
+    <!-- Пошукове поле -->
+    <input id="searchBox" type="text" placeholder="Пошук об'єкта..." style="
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        width: 300px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    ">
 
     <script>
         // Ініціалізація карти
-        var map = L.map('map').setView([49.265571, 35.091304], 6);
+        var map = L.map('map', {
+            zoomControl: false  // Вимикаємо стандартний контроль масштабу
+        }).setView([49.265571, 35.091304], 6);
 
-        // Додавання тайлів карти
+        // Додавання тайлів
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
+        }).addTo(map);
+
+        // Масштабування у правому нижньому кутку
+        L.control.zoom({
+            position: 'bottomright'
         }).addTo(map);
 
         // Дані про об'єкти
@@ -64,10 +88,8 @@
             }
         }
 
-        // Масив для всіх маркерів
+        // Додавання маркерів
         var markers = [];
-
-        // Додавання маркерів на карту
         markersData.forEach(function(data) {
             var marker = L.marker(data.coords, {
                 icon: L.icon({
@@ -84,17 +106,26 @@
                 <img src="${data.image}" width="200px">
             `).addTo(map);
 
-            markers.push({ marker: marker, type: data.type });
+            markers.push(marker);
         });
 
-        // Фільтрація маркерів за типом
-        document.getElementById('filter').addEventListener('change', function(e) {
-            var selectedType = e.target.value;
-            markers.forEach(function(obj) {
-                if (selectedType === 'all' || obj.type === selectedType) {
-                    obj.marker.addTo(map);
+        // Пошук об'єктів
+        document.getElementById('searchBox').addEventListener('input', function(e) {
+            var value = e.target.value.toLowerCase();
+            var found = markersData.find(data => data.name.toLowerCase().includes(value));
+            if (found) {
+                map.setView(found.coords, 12);
+            }
+        });
+
+        // Обробка фільтрації при натисканні на іконку
+        document.getElementById('filter-icon').addEventListener('click', function() {
+            var selectedType = prompt('Введіть тип пошкодження (minor damage, significant damage, destroyed):');
+            markers.forEach(function(marker, index) {
+                if (selectedType === 'all' || markersData[index].type === selectedType) {
+                    marker.addTo(map);
                 } else {
-                    map.removeLayer(obj.marker);
+                    map.removeLayer(marker);
                 }
             });
         });
