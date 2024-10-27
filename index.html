@@ -1,3 +1,4 @@
+Andrew, [27.10.2024 21:57]
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,7 +8,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        /* Пошуковий список із фото */
         #search-results {
             display: none;
             position: fixed;
@@ -20,8 +20,6 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             width: 300px;
-            max-height: 200px;
-            overflow-y: auto;
         }
         #search-results li {
             display: flex;
@@ -39,25 +37,49 @@
         #search-results li:hover {
             background-color: #f0f0f0;
         }
+        .filter-option {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+            cursor: pointer;
+        }
+        .filter-option img {
+            margin-right: 10px;
+            width: 20px;
+        }
+        .filter-option.selected {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
-
-    <input id="searchBox" type="text" placeholder="Search for location..." 
-        style="position: fixed; top: 10px; left: 10px; z-index: 1000; width: 300px; padding: 10px; border-radius: 5px; 
-        border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);" />
-
+    <div id="filter-icon" style="position: fixed; top: 10px; right: 10px; z-index: 1000; cursor: pointer;">
+        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
+    </div>
+    <div id="filter-dropdown" style="display: none; position: fixed; top: 60px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);">
+        <div class="filter-option" data-type="minor damage">
+            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
+            <span>Minor Damage</span>
+        </div>
+        <div class="filter-option" data-type="significant damage">
+            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png" />
+            <span>Significant Damage</span>
+        </div>
+        <div class="filter-option" data-type="destroyed">
+            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" />
+            <span>Destroyed</span>
+        </div>
+    </div>
+    <input id="searchBox" type="text" placeholder="Search for location..." style="position: fixed; top: 10px; left: 10px; z-index: 1000; width: 300px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);" />
     <ul id="search-results"></ul>
 
     <script>
-        // Ініціалізація карти
         var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Дані маркерів
-       Andrew, [27.10.2024 21:57]
+Andrew, [27.10.2024 21:57]
 var markersData = [
     { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
     { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg" },
