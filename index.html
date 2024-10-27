@@ -7,17 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        /* Стили для фільтра із значками */
-        .filter-option {
-            display: flex;
-            align-items: center;
-            padding: 5px 0;
-        }
-        .filter-option img {
-            margin-right: 10px;
-            width: 20px;
-        }
-        /* Стили для пошукового списку */
+        /* Стили для пошукового списку з фото */
         #search-results {
             display: none;
             position: fixed;
@@ -32,21 +22,35 @@
             width: 300px;
         }
         #search-results li {
+            display: flex;
+            align-items: center;
             padding: 10px;
             cursor: pointer;
             border-bottom: 1px solid #ddd;
         }
+        #search-results img {
+            margin-right: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+        }
         #search-results li:hover {
             background-color: #f0f0f0;
         }
-        /* Стили для посилання в попапі */
-        .popup-title a {
-            color: #1a73e8;
-            text-decoration: none;
-            font-weight: bold;
+
+        /* Стили для фільтра */
+        .filter-option {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+            cursor: pointer;
         }
-        .popup-title a:hover {
-            text-decoration: underline;
+        .filter-option img {
+            margin-right: 10px;
+            width: 20px;
+        }
+        .filter-option.selected {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -76,19 +80,15 @@
         border-radius: 5px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     ">
-        <div class="filter-option">
-            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png" />
-            <span>Type of Damage</span>
-        </div>
-        <div class="filter-option">
+        <div class="filter-option" data-type="minor damage">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
             <span>Minor Damage</span>
         </div>
-        <div class="filter-option">
+        <div class="filter-option" data-type="significant damage">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png" />
             <span>Significant Damage</span>
         </div>
-        <div class="filter-option">
+        <div class="filter-option" data-type="destroyed">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" />
             <span>Destroyed</span>
         </div>
@@ -110,7 +110,6 @@
     <ul id="search-results"></ul>
 
     <script>
-        // Ініціалізація карти
         var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -120,10 +119,6 @@
             { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
             { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", link: "https://elevatorist.com/spetsproekt/192.html", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" }
         ];
-
-        function getColor(type) {
-            return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
-        }
 
         var markers = [];
         markersData.forEach(function(data) {
@@ -140,9 +135,27 @@
             markers.push({ marker, type: data.type });
         });
 
+        function getColor(type) {
+            return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
+        }
+
         document.getElementById('filter-icon').addEventListener('click', function() {
             var dropdown = document.getElementById('filter-dropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                option.classList.toggle('selected');
+                var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
+                markers.forEach(({ marker, type }) => {
+                    if (selectedTypes.length === 0 || selectedTypes.includes(type)) {
+                        marker.addTo(map);
+                    } else {
+                        map.removeLayer(marker);
+                    }
+                });
+            });
         });
 
         document.getElementById('searchBox').addEventListener('input', function(e) {
@@ -152,7 +165,7 @@
             resultList.innerHTML = '';
             results.forEach(result => {
                 var li = document.createElement('li');
-                li.textContent = result.name;
+                li.innerHTML = `<img src="${result.image}"><span>${result.name}</span>`;
                 li.addEventListener('click', () => map.setView(result.coords, 12));
                 resultList.appendChild(li);
             });
