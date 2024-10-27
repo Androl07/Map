@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* Пошуковий список із фото */
         #search-results {
@@ -57,29 +58,11 @@
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
 
-    <!-- Іконка фільтра -->
-    <div id="filter-icon" style="
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        z-index: 1000;
-        cursor: pointer;
-    ">
+    <div id="filter-icon" style="position: fixed; top: 10px; right: 10px; z-index: 1000; cursor: pointer;">
         <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
     </div>
 
-    <!-- Випадаючий список фільтра -->
-    <div id="filter-dropdown" style="
-        display: none;
-        position: fixed;
-        top: 60px;
-        right: 10px;
-        z-index: 1000;
-        background: white;
-        padding: 10px;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    ">
+    <div id="filter-dropdown" style="display: none; position: fixed; top: 60px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);">
         <div class="filter-option" data-type="minor damage">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
             <span>Minor Damage</span>
@@ -94,58 +77,67 @@
         </div>
     </div>
 
-    <!-- Пошукове поле -->
-    <input id="searchBox" type="text" placeholder="Search for location..." style="
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        z-index: 1000;
-        width: 300px;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    ">
-
+    <input id="searchBox" type="text" placeholder="Search for location..." style="position: fixed; top: 10px; left: 10px; z-index: 1000; width: 300px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);" />
     <ul id="search-results"></ul>
 
     <script>
-        var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        const url = 'https://raw.githubusercontent.com/Androl07/Map/main/Data.xlsx'; // Посилання на файл
 
-        var markersData = [
-            { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
-            { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
-            { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", link: "https://elevatorist.com/spetsproekt/192.html", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" }
-        ];
-
-        var markers = [];
-        markersData.forEach(function(data) {
-            var marker = L.marker(data.coords, {
-                icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, iconSize: [25, 41], iconAnchor: [12, 41] })
-            }).bindPopup(`
-                <div style="max-width: 250px;">
-                    <a href="${data.link}" target="_blank">${data.name}</a>
-                    <img src="${data.image}" style="width: 100%; border-radius: 5px;">
-                </div>
-            `).addTo(map);
-            markers.push({ marker, type: data.type });
-        });
+        let markers = [];
 
         function getColor(type) {
             return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
         }
 
-        document.getElementById('filter-icon').addEventListener('click', function() {
-            var dropdown = document.getElementById('filter-dropdown');
+        function createMarker(data, map) {
+            const marker = L.marker(data.coords, {
+                icon: L.icon({
+                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`,
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41]
+                })
+            }).bindPopup(`
+                <div style="max-width: 250px;">
+                    <a href="${data.link}" target="_blank">${data.name}</a>
+                    <img src="${data.image}" style="width: 100%; border-radius: 5px;">
+                </div>
+            `);
+            markers.push({ marker, type: data.type });
+            marker.addTo(map);
+        }
+
+        function loadExcelData(map) {
+            fetch(url)
+                .then(response => response.arrayBuffer())
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet);
+
+                    json.forEach(row => {
+                        const coords = [parseFloat(row.Latitude), parseFloat(row.Longitude)];
+                        const markerData = {
+                            name: row.Name,
+                            coords: coords,
+                            type: row.Type,
+                            link: row.Link,
+                            image: row.Image
+                        };
+                        createMarker(markerData, map);
+                    });
+                })
+                .catch(error => console.error('Error loading Excel:', error));
+        }
+
+        document.getElementById('filter-icon').addEventListener('click', () => {
+            const dropdown = document.getElementById('filter-dropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
 
         document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function() {
+            option.addEventListener('click', function () {
                 option.classList.toggle('selected');
-                var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
+                const selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
                 markers.forEach(({ marker, type }) => {
                     if (selectedTypes.length === 0 || selectedTypes.includes(type)) {
                         marker.addTo(map);
@@ -156,19 +148,25 @@
             });
         });
 
-        document.getElementById('searchBox').addEventListener('input', function(e) {
-            var value = e.target.value.toLowerCase();
-            var results = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
-            var resultList = document.getElementById('search-results');
+        document.getElementById('searchBox').addEventListener('input', function (e) {
+            const value = e.target.value.toLowerCase();
+            const results = markers.filter(({ marker }) => marker.getPopup().getContent().toLowerCase().includes(value)).slice(0, 5);
+            const resultList = document.getElementById('search-results');
             resultList.innerHTML = '';
-            results.forEach(result => {
-                var li = document.createElement('li');
-                li.innerHTML = `<img src="${result.image}"><span>${result.name}</span>`;
-                li.addEventListener('click', () => map.setView(result.coords, 12));
+            results.forEach(({ marker }) => {
+                const li = document.createElement('li');
+                li.textContent = marker.getPopup().getContent();
+                li.addEventListener('click', () => map.setView(marker.getLatLng(), 12));
                 resultList.appendChild(li);
             });
             resultList.style.display = results.length > 0 ? 'block' : 'none';
         });
+
+        const map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        loadExcelData(map);
     </script>
 </body>
 </html>
