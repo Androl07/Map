@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Інтерактивна карта з пошуком і фільтром</title>
+    <title>Interactive Map with Search and Filter</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
@@ -10,10 +10,22 @@
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
 
-    <!-- Випадаючий список для фільтра -->
-    <div style="
+    <!-- Іконка фільтра -->
+    <div id="filter-icon" style="
         position: fixed;
         top: 10px;
+        right: 10px;
+        z-index: 1000;
+        cursor: pointer;
+    ">
+        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
+    </div>
+
+    <!-- Випадаючий список для фільтра -->
+    <div id="filter-dropdown" style="
+        display: none;
+        position: fixed;
+        top: 60px;
         right: 10px;
         z-index: 1000;
         background: white;
@@ -21,17 +33,22 @@
         border-radius: 5px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     ">
-        <label for="filter">Фільтр за типом пошкодження:</label>
-        <select id="filter">
-            <option value="all">Всі</option>
-            <option value="minor damage" style="color: green;">🟢 Мінімальні пошкодження</option>
-            <option value="significant damage" style="color: orange;">🟠 Значні пошкодження</option>
-            <option value="destroyed" style="color: red;">🔴 Знищено</option>
+        <select id="filter" style="width: 100%;">
+            <option value="all">All</option>
+            <option value="minor damage" style="background-image: url('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png');">
+                Minor Damage
+            </option>
+            <option value="significant damage" style="background-image: url('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png');">
+                Significant Damage
+            </option>
+            <option value="destroyed" style="background-image: url('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png');">
+                Destroyed
+            </option>
         </select>
     </div>
 
     <!-- Пошукове поле -->
-    <input id="searchBox" type="text" placeholder="Пошук об'єкта..." style="
+    <input id="searchBox" type="text" placeholder="Search for location..." style="
         position: fixed;
         top: 10px;
         left: 10px;
@@ -43,23 +60,34 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     ">
 
+    <ul id="search-results" style="
+        display: none;
+        position: fixed;
+        top: 50px;
+        left: 10px;
+        z-index: 1000;
+        background: white;
+        list-style: none;
+        padding: 0;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        width: 300px;
+    "></ul>
+
     <script>
         // Ініціалізація карти
         var map = L.map('map', {
             zoomControl: false  // Вимикаємо стандартний контроль масштабу
         }).setView([49.265571, 35.091304], 6);
 
-        // Додавання тайлів карти
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
         }).addTo(map);
 
-        // Масштабування у правому нижньому кутку
         L.control.zoom({
             position: 'bottomright'
         }).addTo(map);
 
-        // Дані про об'єкти
         var markersData = [
             {
                 name: "Agricultural firm 'Noviy Shlyach'",
@@ -84,9 +112,8 @@
             }
         ];
 
-        // Функція для вибору кольору маркера
         function getColor(type) {
-            switch(type) {
+            switch (type) {
                 case 'minor damage': return 'green';
                 case 'significant damage': return 'orange';
                 case 'destroyed': return 'red';
@@ -94,18 +121,15 @@
             }
         }
 
-        // Масив для всіх маркерів
         var markers = [];
 
-        // Додавання маркерів на карту
         markersData.forEach(function(data) {
             var marker = L.marker(data.coords, {
                 icon: L.icon({
                     iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`,
                     iconSize: [25, 41],
                     iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
+                    popupAnchor: [1, -34]
                 })
             }).bindPopup(`
                 <div style="max-width: 250px;">
@@ -114,21 +138,14 @@
                     <img src="${data.image}" style="width: 100%; border-radius: 5px;">
                 </div>
             `).addTo(map);
-
-            markers.push({ marker: marker, type: data.type });
+            markers.push({ marker, type: data.type });
         });
 
-        // Обробка пошуку
-        document.getElementById('searchBox').addEventListener('input', function(e) {
-            var value = e.target.value.toLowerCase();
-            var filteredMarkers = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
-            if (filteredMarkers.length > 0) {
-                var firstMatch = filteredMarkers[0];
-                map.setView(firstMatch.coords, 12);
-            }
+        document.getElementById('filter-icon').addEventListener('click', function() {
+            var dropdown = document.getElementById('filter-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
 
-        // Обробка фільтрації
         document.getElementById('filter').addEventListener('change', function(e) {
             var selectedType = e.target.value;
             markers.forEach(function(obj) {
@@ -138,6 +155,20 @@
                     map.removeLayer(obj.marker);
                 }
             });
+        });
+
+        document.getElementById('searchBox').addEventListener('input', function(e) {
+            var value = e.target.value.toLowerCase();
+            var results = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
+            var resultList = document.getElementById('search-results');
+            resultList.innerHTML = '';
+            results.forEach(result => {
+                var li = document.createElement('li');
+                li.textContent = result.name;
+                li.addEventListener('click', () => map.setView(result.coords, 12));
+                resultList.appendChild(li);
+            });
+            resultList.style.display = results.length > 0 ? 'block' : 'none';
         });
     </script>
 </body>
