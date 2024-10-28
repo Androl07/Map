@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
+        /* Стили для пошукового списку з фото */
         #search-results {
             display: none;
             position: fixed;
@@ -17,7 +18,7 @@
             list-style: none;
             padding: 0;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
             width: 300px;
         }
         #search-results li {
@@ -36,6 +37,8 @@
         #search-results li:hover {
             background-color: #f0f0f0;
         }
+
+        /* Стили для фільтра */
         .filter-option {
             display: flex;
             align-items: center;
@@ -53,10 +56,30 @@
 </head>
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
-    <div id="filter-icon" style="position: fixed; top: 10px; right: 10px; z-index: 1000; cursor: pointer;">
+
+    <!-- Іконка фільтра -->
+    <div id="filter-icon" style="
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        cursor: pointer;
+    ">
         <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
     </div>
-    <div id="filter-dropdown" style="display: none; position: fixed; top: 60px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);">
+
+    <!-- Випадаючий список для фільтра -->
+    <div id="filter-dropdown" style="
+        display: none;
+        position: fixed;
+        top: 60px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    ">
         <div class="filter-option" data-type="minor damage">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
             <span>Minor Damage</span>
@@ -70,96 +93,42 @@
             <span>Destroyed</span>
         </div>
     </div>
-    <input id="searchBox" type="text" placeholder="Search for location..." style="position: fixed; top: 10px; left: 10px; z-index: 1000; width: 300px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);" />
+
+    <!-- Пошукове поле -->
+    <input id="searchBox" type="text" placeholder="Search for location..." style="
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        width: 300px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    ">
+
     <ul id="search-results"></ul>
 
     <script>
-var markersData = [
-    { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
-    { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg" },
-    { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489-na-teritorii-silgosppidpriemstva-na-harkivsini-vnaslidok-obstrilu-zgoriv-kombajn.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
-    { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", link: "https://elevatorist.com/spetsproekt/192.html", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" },
-    { name: "Kupyansky KHP", coords: [49.821708, 36.675346], type: "significant damage", link: "https://kupiansk.city/articles/250909/pidstupni-udari-voroga-po-civilnih-obyektah-foto", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" },
-    { name: "Agricultural object", coords: [49.708915, 37.576864], type: "significant damage", link: "https://suspilne.media/316828-vnaslidok-obstrilu-14-listopada-na-harkivsini-gorili-psenica-ta-nasinna-sonasniku/", image: "https://cdn4.suspilne.media/images/resize/1040x1.78/59e6b97a4c311936.jpg" },
-    { name: "Agricultural object", coords: [49.687982, 37.168194], type: "significant damage", link: "https://elevatorist.com/novosti/15605-vorogi-obstrilyali-elevatori-na-harkivschini", image: "https://elevatorist.com/media/news/original/00/15/15605/obstrel-30785.jpg" },
-    { name: "Granary", coords: [49.731096, 36.869725], type: "significant damage", link: "https://elevatorist.com/novosti/15413-na-harkivschini-likvidovano-pojeju-na-elevatori", image: "https://elevatorist.com/media/news/original/00/15/15413/pojar-30562.png" },
-    { name: "Farm buildings", coords: [50.311774, 35.728447], type: "significant damage", link: "https://www.ukrinform.ua/rubric-regions/3686728-na-harkivsini-cerez-obstrili-poskodzeni-lep-i-fermerske-gospodarstvo.html", image: "https://static.ukrinform.com/photos/2023_03/thumb_files/630_360_1679641717-731.jpeg" },
-    { name: "Local agricultural enterprise", coords: [49.309162, 37.850988], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3708428-rosiani-obstrilali-z-artilerii-selo-na-harkivsini-e-zagiblij.html", image: "https://static.ukrinform.com/photos/2023_05/1683905897-230.jpg" },
-    { name: "Field", coords: [48.929358, 36.883189], type: "minor damage", link: "https://agronews.ua/news/na-harkivshhyni-na-protytankovij-mini-pidirvavsya-kombajn/", image: "https://agronews.ua/wp-content/uploads/2023/09/647-623x370.jpg" },
-    { name: "Field", coords: [49.349191, 36.737711], type: "significant damage", link: "https://agronews.ua/news/na-harkivshhyni-stvoryly-shhe-odnu-bezpilotnu-mashynu-dlya-rozminuvannya-poliv/", image: "https://agronews.ua/wp-content/uploads/2023/07/drakon-5746-623x370.jpg" },
-    { name: "Agrocombined 'Slobozhanskyi'", coords: [49.711463, 36.925471], type: "destroyed", link: "https://agronews.ua/news/na-harkivshhyni-zagynulo-60-tys-tvaryn/", image: "https://agronews.ua/wp-content/uploads/2023/04/ferma-33132-623x370.jpg" },
-    { name: "Field", coords: [49.715394, 36.829959], type: "minor damage", link: "https://dumka.media/ukr/war/1694085602-prorvati-sutsilniy-poyas-minuvannya-yak-agrariyi-navchilisya-znimati-rosiyski-mini-v-harkivskiy-oblasti", image: "https://dumka.media/static/ckef/img/373394838_237518418817489_3916670008170820135_n.jpg" },
-    { name: "Field", coords: [49.494015, 36.816157], type: "minor damage", link: "https://dumka.media/ukr/war/1694085602-prorvati-sutsilniy-poyas-minuvannya-yak-agrariyi-navchilisya-znimati-rosiyski-mini-v-harkivskiy-oblasti", image: "https://dumka.media/static/ckef/img/373394838_237518418817489_3916670008170820135_n.jpg" },
-    { name: "Field", coords: [49.641096, 36.839837], type: "minor damage", link: "https://dumka.media/ukr/war/1694085602-prorvati-sutsilniy-poyas-minuvannya-yak-agrariyi-navchilisya-znimati-rosiyski-mini-v-harkivskiy-oblasti", image: "https://dumka.media/static/ckef/img/373394838_237518418817489_3916670008170820135_n.jpg" },
-    { name: "Field", coords: [49.725271, 36.80481], type: "significant damage", link: "https://www.objectiv.tv/uk/objectively/2023/05/03/rozminovuyut-traktorami-layut-doshh-i-donatyat-na-zsu-dolya-agrariyiv-harkivshhini/", image: "https://www.objectiv.tv/wp-content/uploads/2023/05/20230427_165250-2048x1536.jpg" },
-    { name: "Field", coords: [50.041454, 36.408258], type: "significant damage", link: "https://suspilne.media/420894-bez-akta-rozminuvanna-na-pole-ne-pidemo-ak-fermeri-hersonsini-gotuutsa-do-posivnoi/", image: "https://cdn4.suspilne.media/images/resize/794x1.5/dbc699cd8c742334.jpg" },
-    { name: "Field", coords: [50.006412, 36.253046], type: "significant damage", link: "https://www.unn.com.ua/uk/news/2048863-u-kharkivskiy-oblasti-na-mini-pidirvavsya-kombayn-scho-vidomo", image: "https://www.unn.com.ua/uploads/news/2023/10/01/c95be1314629275bb67ae35f49c4121d3daea70b.jpg" },
-    { name: "Field", coords: [49.72587, 37.637047], type: "significant damage", link: "https://dumka.media/ukr/war/1693974367-vnaslidok-rosiyskogo-obstrilu-gorilo-pole-v-harkivskiy-oblasti-kadri-z-mistsya", image: "https://dumka.media/static/ckef/img/375827692_692413419594821_5687102623562788243_n.jpg" },
-    { name: "Field", coords: [49.239225, 37.804681], type: "minor damage", link: "https://2day.kh.ua/ua/kharkow/cherez-obstrily-u-kharkivskiy-oblasti-zaynyalosya-pole", image: "https://2day.kh.ua/sites/default/files/styles/glavnoe_wm/public/2022-07/52211860251_e3532ed070_c.jpg?itok=f6ffQxhc" },
-    { name: "Field", coords: [49.769846, 37.58396], type: "significant damage", link: "https://www.unn.com.ua/uk/news/2022996-na-kharkivschini-cherez-padinnya-rosiyskogo-bezpilotnika-zagorilosya-pole", image: "https://2day.kh.ua/ua/kharkow/u-kharkivskiy-oblasti-zaynyalosya-pole-na-mistsi-padinnya-rosiyskoho-bezpilotnyka" },
-    { name: "Field", coords: [49.940128, 37.512961], type: "minor damage", link: "https://suspilne.media/257528-na-harkivsini-vid-obstrilu-rf-spalahnulo-psenicne-pole/", image: "https://cdn4.suspilne.media/images/resize/1040x1.78/af3616e9fff54997.jpg" },
-    { name: "Field", coords: [49.002347, 33.776178], type: "minor damage", link: "https://kurkul.com/news/16320-znovu-goryat-pshenichni-polya--teper-na-poltavschini-ta-harkivschini", image: "https://kurkul.com/media/news/original/00/16/16320/pogega-37836.jpg" },
-    { name: "Field", coords: [49.082764, 35.903505], type: "minor damage", link: "https://kurkul.com/news/16320-znovu-goryat-pshenichni-polya--teper-na-poltavschini-ta-harkivschini", image: "https://kurkul.com/media/news/original/00/16/16320/pogega-37836.jpg" },
-    { name: "Field", coords: [50.293166, 35.818236], type: "significant damage", link: "https://lb.ua/society/2022/07/20/523760_okupanti_obstrilyali_harkivshchini.html", image: "https://i.lb.ua/015/21/62d80802ee6fe.jpeg" },
-    { name: "LLC RUBIZHNE-AGRO", coords: [49.00999, 38.371297], type: "destroyed", link: "https://elevatorist.com/novosti/14678-okupanti-rozbombili-litakami-elevator-u-rubijnomu", image: "https://elevatorist.com/media/news/original/00/14/14678/photo_2022-05-03_10-58-21-29652.jpg" },
-    { name: "LLC STAROBILSKY ELEVATOR", coords: [49.28582, 38.919792], type: "significant damage", link: "https://www.ostro.org/news/v-polovynkyno-starobelskogo-rajona-pryletelo-v-elevator-okkupanty-greshat-na-himars-foto-i398661", image: "https://www.ostro.org/files_dn/2022/12/24/pol_03.jpg" },
-    { name: "Theft of grain and sunflowers from LLC STAROBILSKY ELEVATOR", coords: [49.285663, 38.919972], type: "significant damage", link: "https://lb.ua/society/2022/11/30/537546_rosiyani_vkrali_tisyachi_tonn_zerna.html", image: "https://i.lb.ua/071/07/63870088220e6.jpeg" },
-    { name: "Theft of grain from HLEBOKOMBINAT", coords: [48.532183, 39.340518], type: "significant damage", link: "https://cfts.org.ua/news/2022/08/25/rosiyani_vkrali_200_tis_tonn_zerna_novogo_vrozhayu_z_lugansko_oblasti_71634", image: "https://cfts.org.ua/imglib/_newimage/news/132190/1068.jpg" },
-    { name: "KSK 'Alexandria'", coords: [50.57939729, 30.21236802], type: "significant damage", link: "https://hromadske.radio/news/2022/03/22/u-hostomeli-rosiys-ki-okupanty-spalyly-stayniu-razom-iz-kin-my", image: "https://kp.ua/img/article/6463/41_main-v1647939206.webp" },
-    { name: "Dairy farm of 'Agromol' company", coords: [50.0439237, 36.47931591], type: "significant damage", link: "https://2day.kh.ua/ua/kharkow/okupanty-zruynuvaly-fermu-u-kharkivskiy-oblasti", image: "https://2day.kh.ua/sites/default/files/styles/glavnoe/public/2022-03/photoeditorsdk-export_1_1.png?h=31136250&itok=4PGr1hfa" },
-    { name: "Agricultural enterprise", coords: [49.71342442, 36.92529745], type: "significant damage", link: "https://atn.ua/kharkiv/okupanty-na-kharkivshchyni-vypaliuiut-fermy-razom-z-tvarynamy-video-370155/", image: "https://atn.ua/assets/uploads/2022/05/ferma1-1536x1149.jpg" },
-    { name: "Farming", coords: [49.93731686, 36.48851371], type: "significant damage", link: "https://suspilne.media/227968-ratuvala-porosat-ta-ne-pustila-tanki-ak-perezila-okupaciu-fermerka-z-maloi-rogani-na-harkivsini/", image: "https://cdn4.suspilne.media/images/resize/794x1.78/1836b2d855735329.jpg" },
-    { name: "Dairy farm 'Naporivske'", coords: [51.38357291, 31.39301504], type: "significant damage", link: "https://avm-ua.org/uk/post/rosijski-soldati-vbili-110-koriv-na-molocnij-fermi-v-ukraini", image: "http://storage.avm-ua.org/uploads/2022/02-05-1.jpg" },
-    { name: "Farming", coords: [51.43611412, 31.36019538], type: "destroyed", link: "https://landlord.ua/news/sytuatsiia-na-tvarynnytskykh-fermakh-ukrainy-pid-chas-viiny-zvit-ho-vidkryti-klitky-ukraina/", image: "https://storage.googleapis.com/otwarteklatki-wp-media/sites/2/2022/06/-%D0%A1%D1%83%D1%81%D0%BF%D1%96%D0%BB%D1%8C%D0%BD%D0%B5-%D0%A7%D0%B5%D1%80%D0%BD%D1%96%D0%B3%D1%96%D0%B2.jpg" },
-    { name: "Ecopark 'Yasnohorodka'", coords: [50.36862729, 30.0338457], type: "significant damage", link: "https://landlord.ua/news/sytuatsiia-na-tvarynnytskykh-fermakh-ukrainy-pid-chas-viiny-zvit-ho-vidkryti-klitky-ukraina/", image: "https://storage.googleapis.com/otwarteklatki-wp-media/sites/2/2022/06/-%D0%9E%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80-%D0%9C%D0%B5%D0%B4%D0%B2%D0%B5%D0%B4%D1%94%D0%B2-%D0%9D%D0%92-1024x681.png" },
-    { name: "Farming", coords: [47.74650011, 36.07481071], type: "significant damage", link: "https://landlord.ua/news/sytuatsiia-na-tvarynnytskykh-fermakh-ukrainy-pid-chas-viiny-zvit-ho-vidkryti-klitky-ukraina/", image: "https://storage.googleapis.com/otwarteklatki-wp-media/sites/2/2022/06/-%D0%97%D0%B0%D0%BF%D0%BE%D1%80%D1%96%D0%B7%D1%8C%D0%BA%D0%B0-%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D0%BD%D0%B0-%D0%B2%D1%96%D0%B8%CC%86%D1%81%D1%8C%D0%BA%D0%BE%D0%B2%D0%B0-%D0%B0%D0%B4%D0%BC%D1%96%D0%BD%D1%96%D1%81%D1%82%D1%80%D0%B0%D1%86%D1%96%D1%8F-1024x768.jpg" },
-    { name: "Poultry farm", coords: [46.85770341, 33.48261678], type: "significant damage", link: "https://lb.ua/society/2023/05/26/557211_rf_obstrilyala_hersonskiy_oblasti.html", image: "https://i.lb.ua/021/04/647063e2bee28.jpeg" },
-    { name: "Farming", coords: [47.49849027, 33.91773731], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3518845-na-hersonsini-rosijski-raketi-vlucili-v-fermu-i-silgosptehniku.html", image: "https://static.ukrinform.com/photos/2022_06/thumb_files/630_360_1656592649-509.jpg" },
-    { name: "Farming", coords: [46.64948421, 31.61240792], type: "significant damage", link: "https://zemliak.com/news/ferma/2932-vnaslidok-obstrilu-raketi-rosiyan-rozgromili-fermu-na-mikolajivshchini", image: "https://cdn4.suspilne.media/images/resize/794x1.78/1133bcb57b45550c.jpg" },
-    { name: "Elevator", coords: [51.21075769, 33.38631646], type: "destroyed", link: "https://www.facebook.com/OTGInformSumy/photos/181498630934699/?locale=ms_MY", image: "https://scontent.fdnk2-1.fna.fbcdn.net/v/t39.30808-6/289955968_181498627601366_7049488255656344613_n.png?_nc_cat=107&ccb=1-7&_nc_sid=5f2048&_nc_ohc=xJ67rMK0jU0AX-x2ftu&_nc_ht=scontent.fdnk2-1.fna&oh=00_AfCPGNy8yucqzf0EzlThJbN4bd_Bjx79MFTk76n2-ykDtA&oe=654130B1" },
-    { name: "Elevator", coords: [51.10785641, 34.24995963], type: "destroyed", link: "https://suspilne.media/504577-u-bilopilskij-gromadi-na-sumsini-obstrilami-poskodzeni-budinki-ta-elevator/", image: "https://cdn4.suspilne.media/images/resize/794x1.78/6c837741b105ceec.jpg" },
-    { name: "Agricultural enterprise 'APK Invest'", coords: [48.29688462, 37.21230268], type: "destroyed", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/photo_2022-06-16_12-33-51.jpg" },
-    { name: "A complex of factories for the production of agricultural machinery", coords: [48.57679169, 37.96902895], type: "destroyed", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/photo_2022-08-21_09-42-53.jpg" },
-    { name: "The territory of the agricultural enterprise", coords: [48.57770027, 37.95922279], type: "destroyed", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/photo_2022-06-05_17-41-42.jpg" },
-    { name: "PJSC 'Vistek Machine-Building Plant'", coords: [48.60060819, 37.99370527], type: "significant damage", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/photo_2022-06-09_12-55-00.jpg" },
-    { name: "'Factory of agricultural machinery' LLC", coords: [48.61198733, 37.99194574], type: "destroyed", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/photo_2022-08-26_08-48-31.jpg" },
-    { name: "Kramatorsk agricultural zone", coords: [48.75222765, 37.53912449], type: "destroyed", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/1_NAvH1ha.jpg" },
-    { name: "Elevator of 'Agrofirma Agrotis' LLC", coords: [48.77392507, 37.58774757], type: "significant damage", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/2022-03-12_01.38.48.jpg" },
-    { name: "Old Kostiantyn elevator", coords: [49.74898414, 27.17410936], type: "significant damage", link: "https://fakty.com.ua/ua/proisshestvija/20230806-na-hmelnychchyni-znovu-lunayut-vybuhy-zmi/", image: "https://cdn.fakty.com.ua/wp-content/uploads/2023/08/06/64cf6a51ec330_image_name-768x432.jpg" },
-    { name: "Agrofirm Bilozerskyi", coords: [46.58081322, 32.46483344], type: "destroyed", link: "https://www.pravda.com.ua/news/2023/07/16/7411583/", image: "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.radiosvoboda.org%2Fa%2Fnews-zkhersonshchyna-obstril-rf%2F32505821.html&psig=AOvVaw0725Dr5PGvufmu29pmYx1t&ust=1698486621659000&source=images&cd=vfe&opi=89978449&ved=0CBEQjRxqFwoTCJDkx-_5lYIDFQAAAAAdAAAAABAE" },
-    { name: "Novoslobodske", coords: [51.36781466, 33.93963532], type: "destroyed", link: "https://lb.ua/society/2022/08/11/526007_rosiya_obstrilyala_sumshchinu_zgorilo.html", image: "https://i.lb.ua/077/14/62f53f5cef46a.jpeg" },
-    { name: "U-Port Ochakov", coords: [46.63604065, 31.58278411], type: "significant damage", link: "https://ukranews.com/ua/news/880064-rosiyany-znyshhyly-tysyachi-tonn-zerna-pry-obstrilah-ochakova-na-mykolayivshhyni", image: "https://ukranews.com/upload/media/2022/07/24/62dcd7cfc8ae3-snaryad_v_pole.jpg.webp" },
-    { name: "Kotlyareve", coords: [46.88535581, 32.22303747], type: "significant damage", link: "https://tsn.ua/ato/rosiyani-prodovzhuyut-paliti-ukrayinskiy-hlib-na-mikolayivschini-vigorilo-pole-pshenici-foto-2120245.html", image: "https://img.tsn.ua/cached/785/tsn-84ee4f9844c21d3af2b3cfbad2c9c711/thumbs/1036x648/41/ee/19fa8132ad3691dd258c3d3fef5cee41.jpeg" },
-    { name: "Osokorivka", coords: [47.4378385, 33.92148322], type: "significant damage", link: "https://mind.ua/news/20244173-opublikovano-video-yak-rosiyani-navmisno-pidpalyuyut-polya-z-psheniceyu-na-hersonshchini", image: "https://s.mind.ua/img/forall/a/202441/73.jpg?1657436197" },
-    { name: "Bila Hora", coords: [48.48336758, 37.86821149], type: "significant damage", link: "https://zmina.info/news/na-donechchyni-vnaslidok-obstrilu-rosiyan-zgorilo-150-ga-pshenyczi/", image: "https://zmina.info/wp-content/uploads/2022/07/photo_2022-07-31-15.02.54-e1659269011980.jpeg" },
-    { name: "Bohodukhiv", coords: [50.16400299, 35.54234974], type: "significant damage", link: "https://lb.ua/society/2022/08/08/525602_harkivshchini_rosiyani_umisno.html", image: "https://i.lb.ua/041/25/62f0cc30e8a62.jpeg" },
-    { name: "Shyrokivsʹka hromady", coords: [47.90825912, 34.90921428], type: "significant damage", link: "https://www.unian.ua/incidents/na-dnipropetrovshchini-zagorilos-pole-z-psheniceyu-v-yake-vluchili-snaryadi-okupantiv-foto-novini-dnipra-11868768.html", image: "https://images.unian.net/photos/2022_06/1655404402-6890.jpg?r=188998" },
-    { name: "Bilopilʹsʹka hromada", coords: [51.13761268, 34.33743339], type: "significant damage", link: "https://www.pravda.com.ua/news/2022/08/1/7361246/", image: "https://img.pravda.com.ua/images/doc/5/1/5188534-gettyimages-1398867769--1-.png" },
-    { name: "Chornobayivsʹka ptakhofabryka", coords: [46.92593138, 32.68890343], type: "destroyed", link: "https://novynarnia.com/2022/12/15/zagynulo-44-mln-kurej/", image: "https://latifundist.com/media/minigallery/o-o-w/00/05/5078/3-139986.jpg" },
-    { name: "Malorohansʹkyy molochnyy zavod", coords: [49.93897839, 36.47739983], type: "minor damage", link: "https://2day.kh.ua/ua/kharkow/molokozavody-znyshcheni-tsiny-na-molochnu-produktsiyu-na-kharkivshchyni-zrostatymut", image: "https://2day.kh.ua/sites/default/files/styles/glavnoe/public/wp-content/uploads/2019/05/4gqrnc2bld_infi3d066d.jpg?h=215d3f1a&itok=jMV5k75V" },
-    { name: "Beryslavsʹkyy Zernovyy Terminal", coords: [46.84708761, 33.43555576], type: "destroyed", link: "https://proagro.com.ua/news/ukr/vnaslidok-obstrilu-rashystiv-znyshheno-elevator-u-beryslavi-na-hersonshhyni.html", image: "https://proagro.com.ua/wp-content/uploads/2023/04/elevator-berislav.jpg" },
-    { name: "Bilokrynytsʹkyy KKHP", coords: [47.35857194, 33.20037965], type: "destroyed", link: "https://landlord.ua/news/rosiiany-znyshchyly-elevator-na-khersonshchyni/", image: "https://landlord.ua/wp-content/uploads/2022/06/290366861_178928437846758_3700211048048121283_n-920x527.jpg" },
-    { name: "RUBIZHNE-AHRO", coords: [49.01372801, 38.38002155], type: "destroyed", link: "https://freeradio.com.ua/rosiiany-rozbombyly-elevator-u-rubizhnomu-v-iakomu-bulo-zerna-na-120-milioniv-khlibyn-video/", image: "https://freeradio.com.ua/wp-content/uploads/2022/05/silo.jpg" },
-    { name: "Orekhovskiy elevator", coords: [47.60436728, 35.78839603], type: "destroyed", link: "https://gylyajpole.city/articles/225305/armiya-rf-zrujnuvala-elevator-bilya-gulyajpolya", image: "https://cdn.abo.media/upload/article/res/770-430/o_1g8acqklt2pk1cqa1nfep0b19iq1k.jpg" },
-    { name: "Vasylivsky district 70 hectares of wheat crop", coords: [47.443136, 35.214359], type: "destroyed", link: "https://www.zoda.gov.ua/news/62276/cherez-obstrili-zruynovaniy-promobjekt-u-zaporizhzhi-ta-znisheni-polya-z-vrozhajem-u-stepnogirsku-naslidki-zlochiniv-fiksuje-politsiya.html", image: "https://www.zoda.gov.ua/images/article/1/000192/192284/picture.jpg" },
-    { name: "Pologiv district", coords: [47.521734, 36.436146], type: "significant damage", link: "https://lb.ua/society/2022/08/07/525518_zaporizkiy_oblasti_rosiyani.html", image: "https://i.lb.ua/040/28/62eee00f19bb6.jpeg" },
-    { name: "Walking field", coords: [47.667775, 36.289389], type: "significant damage", link: "https://suspilne.media/261337-ak-rosijske-vtorgnenna-poznacaetsa-na-znivah-u-zaporizkij-oblasti/", image: "https://cdn4.suspilne.media/images/resize/1040x1.78/521555abc67fc636.jpg" },
-    { name: "Fields Kamianske", coords: [48.46501, 34.623238], type: "significant damage", link: "https://suspilne.media/261337-ak-rosijske-vtorgnenna-poznacaetsa-na-znivah-u-zaporizkij-oblasti/", image: "https://cdn4.suspilne.media/images/resize/794x1.78/10364dc3de5ddbe3.jpg" },
-    { name: "Vilniansk elevator", coords: [47.934492, 35.420536], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3736881-zniva-v-umovah-vijni-na-zaporizzi-80-rilli-zostaetsa-pid-okupacieu.html", image: "https://static.ukrinform.com/photos/2023_07/1689599849-138.jpg" },
-    { name: "Agricultural enterprise in the suburbs of Zaporizhzhia", coords: [47.875611, 35.249974], type: "destroyed", link: "https://zabor.zp.ua/new/v-zaporizhzhi-vnochi-chuli-vibukhi-rosiyska-raketi-vluchili-po-odnomu-z-pidpriemstv-vinikla-pozhezha-foto", image: "https://foto.zabor.zp.ua/media/17941/IMG_20221127_075408_825.jpg" },
-    { name: "Dairy farm SVC 'Russia'", coords: [47.275703, 34.604175], type: "significant damage", link: "https://agrotimes.ua/tvarinnitstvo/na-zaporizkij-fermi-cherez-obstrily-zagynuly-korovy/", image: "https://agrotimes.ua/wp-content/uploads/2022/08/1661959515381.jpg" },
-    { name: "The village of Vozdvizhivka", coords: [47.754433, 36.060606], type: "significant damage", link: "https://agrotimes.ua/tvarinnitstvo/na-zaporizkij-fermi-cherez-obstrily-zagynula-hudoba/", image: "https://agrotimes.ua/wp-content/uploads/2021/02/korova5.jpg" },
-    { name: "Grain processing and reception complex", coords: [47.933947, 35.93723], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3544403-na-zaporizzi-vorog-obstrilav-agropidpriemstvo-ta-elevator-zniseni-365-tonn-sonasniku.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/360_240_1691335392-520.jpg" },
-    { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg" }      
-];
+        var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        var markersData = [
+            { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg" },
+            { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg" },
+            { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", link: "https://elevatorist.com/spetsproekt/192.html", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg" }
+        ];
 
         var markers = [];
         markersData.forEach(function(data) {
             var marker = L.marker(data.coords, {
-                icon: L.icon({ iconUrl: https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png, iconSize: [25, 41], iconAnchor: [12, 41] })
+                icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, iconSize: [25, 41], iconAnchor: [12, 41] })
             }).bindPopup(`
                 <div style="max-width: 250px;">
-                    <a href="${data.link}" target="_blank">${data.name}</a>
+                    <div class="popup-title">
+                        <a href="${data.link}" target="_blank">${data.name}</a>
+                    </div>
                     <img src="${data.image}" style="width: 100%; border-radius: 5px;">
                 </div>
             `).addTo(map);
@@ -174,8 +143,8 @@ var markersData = [
             var dropdown = document.getElementById('filter-dropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
-        
-document.querySelectorAll('.filter-option').forEach(option => {
+
+        document.querySelectorAll('.filter-option').forEach(option => {
             option.addEventListener('click', function() {
                 option.classList.toggle('selected');
                 var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
@@ -196,14 +165,12 @@ document.querySelectorAll('.filter-option').forEach(option => {
             resultList.innerHTML = '';
             results.forEach(result => {
                 var li = document.createElement('li');
-                li.innerHTML = <img src="${result.image}"><span>${result.name}</span>;
+                li.innerHTML = `<img src="${result.image}"><span>${result.name}</span>`;
                 li.addEventListener('click', () => map.setView(result.coords, 12));
                 resultList.appendChild(li);
             });
             resultList.style.display = results.length > 0 ? 'block' : 'none';
         });
-        // Приховати результати при кліку на карту
-        map.on('click', hideSearchResults);
     </script>
 </body>
 </html>
