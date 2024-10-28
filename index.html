@@ -244,6 +244,10 @@
             });
             resultList.style.display = results.length > 0 ? 'block' : 'none';
         });
+        
+    // Приховати результати при кліку на карту
+    map.on('click', hideSearchResults);
+        
     </script>
 </body>
 </html>
