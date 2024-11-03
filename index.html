@@ -196,7 +196,11 @@
 
         markersData.forEach(function(data) {
     var marker = L.marker(data.coords, {
-        icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, iconSize: [25, 41], iconAnchor: [12, 41] })
+        icon: L.icon({ 
+            iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, 
+            iconSize: [25, 41], 
+            iconAnchor: [12, 41] 
+        })
     }).bindPopup(`
         <div style="max-width: 250px;">
             <div class="popup-title">
@@ -208,9 +212,10 @@
     `).addTo(map);
 });
 
-        function getColor(type) {
-            return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
-        }
+// Функція для визначення кольору іконки на основі типу пошкодження
+function getColor(type) {
+    return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
+}
 
         // Пошук
         document.getElementById('searchBox').addEventListener('input', function(e) {
