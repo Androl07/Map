@@ -195,19 +195,19 @@
         ];
 
         markersData.forEach(function(data) {
-            var marker = L.marker(data.coords, {
-                icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, iconSize: [25, 41], iconAnchor: [12, 41] })
-            }).bindPopup(`
-                <div style="max-width: 250px;">
-                    <div class="popup-title">
-                        <a href="${data.link}" target="_blank">${data.name}</a>
-                    </div>
-                    <img src="${data.image}" style="width: 100%; border-radius: 5px;">
-                    <br><strong>lost income:</strong> ${data.lostIncome}
-                </div>
-            `).addTo(map);
-            markers.push({ marker, type: data.type });
-        });
+    var marker = L.marker(data.coords, {
+        icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, iconSize: [25, 41], iconAnchor: [12, 41] })
+    }).bindPopup(`
+        <div style="max-width: 250px;">
+            <div class="popup-title">
+                <a href="${data.link}" target="_blank">${data.name}</a>
+            </div>
+            <img src="${data.image}" style="width: 100%; border-radius: 5px;">
+            <br><strong>lost income:</strong> ${data.lostIncome}
+        </div>
+    `).addTo(map);
+    markers.push({ marker, type: data.type });
+});
 
         function getColor(type) {
             return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
