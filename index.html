@@ -157,11 +157,21 @@
 
         var markers = []; // Array to store marker instances
 
+        // Function to get gradient color based on lost income
+        function getGradientColor(income) {
+            if (income <= 25000) return '#ffcccb';
+            if (income > 25000 && income <= 50000) return '#ffb3b3';
+            if (income > 50000 && income <= 75000) return '#ff9999';
+            if (income > 75000 && income <= 100000) return '#ff6666';
+            return '#ff3333';
+        }
+
         // Function to add markers to the map
         markersData.forEach(data => {
+            var incomeValue = parseInt(data.lostIncome.replace(/\D/g, ''), 10);
             var marker = L.marker(data.coords).addTo(map);
             marker.bindPopup(`
-                <div style="max-width: 250px;">
+                <div style="background-color: ${getGradientColor(incomeValue)}; padding: 10px; border-radius: 5px; max-width: 250px;">
                     <h3>${data.name}</h3>
                     <img src="${data.image}" alt="Image" style="width: 100%; height: auto; margin-bottom: 10px;">
                     <p>Type: ${data.type}</p>
@@ -223,8 +233,8 @@
         document.getElementById('searchBox').addEventListener('input', function() {
             var query = this.value.toLowerCase();
             markers.forEach(({ marker }) => {
-                var nameLower = marker.getPopup().getContent().toLowerCase();
-                if (nameLower.includes(query)) {
+                var popupContent = marker.getPopup().getContent().toLowerCase();
+                if (popupContent.includes(query)) {
                     marker.addTo(map);
                 } else {
                     map.removeLayer(marker);
