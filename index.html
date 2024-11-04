@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
         #searchBox {
             position: fixed;
             top: 10px;
@@ -16,9 +20,8 @@
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-
         #search-results {
             display: none;
             position: fixed;
@@ -29,10 +32,9 @@
             list-style: none;
             padding: 0;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
             width: 300px;
         }
-
         #search-results li {
             display: flex;
             align-items: center;
@@ -40,34 +42,31 @@
             cursor: pointer;
             border-bottom: 1px solid #ddd;
         }
-
         #search-results img {
             margin-right: 10px;
             width: 40px;
             height: 40px;
             border-radius: 5px;
         }
-
         #search-results li:hover {
             background-color: #f0f0f0;
         }
-
         #filter-icon,
-        #income-filter-icon {
+        #sales-filter-icon {
             position: fixed;
             top: 10px;
             right: 10px;
             z-index: 1000;
             cursor: pointer;
-            width: 40px;
         }
-
-        #income-filter-icon {
+        #sales-filter-icon {
             right: 60px;
         }
-
+        .filter-icon img {
+            width: 40px;
+        }
         #filter-dropdown,
-        #income-filter-dropdown {
+        #sales-filter-dropdown {
             display: none;
             position: fixed;
             top: 60px;
@@ -76,61 +75,64 @@
             background: white;
             padding: 10px;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-
-        #income-filter-dropdown {
+        #sales-filter-dropdown {
             right: 60px;
         }
-
-        .filter-option {
-            display: block;
-            margin-bottom: 5px;
+        .filter-option,
+        .income-filter-option {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
             cursor: pointer;
-            padding: 5px;
-            border-radius: 3px;
         }
-
-        .filter-option.selected {
-            background-color: black;
-            color: white;
+        .filter-option img,
+        .income-filter-option img {
+            margin-right: 10px;
+            width: 20px;
         }
-
-        #map {
-            width: 100%;
-            height: 100vh;
+        .filter-option.selected,
+        .income-filter-option.selected {
+            font-weight: bold;
+            background-color: #ddd;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
+
+    <!-- Пошук -->
     <input id="searchBox" type="text" placeholder="Search for location...">
     <ul id="search-results"></ul>
 
-    <div id="filter-icon">
-        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="Type of damage filter">
+    <!-- Іконка фільтру за типом -->
+    <div id="filter-icon" class="filter-icon">
+        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="Filter Type">
+    </div>
+    <!-- Іконка фільтру за втратами -->
+    <div id="sales-filter-icon" class="filter-icon">
+        <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" alt="Filter Sales">
     </div>
 
-    <div id="income-filter-icon">
-        <img src="https://cdn-icons-png.flaticon.com/512/2740/2740679.png" alt="Lost income filter">
-    </div>
-
+    <!-- Випадаючий список для фільтру за типом -->
     <div id="filter-dropdown">
         <div class="filter-option" data-type="minor damage">Minor Damage</div>
         <div class="filter-option" data-type="significant damage">Significant Damage</div>
         <div class="filter-option" data-type="destroyed">Destroyed</div>
     </div>
 
-    <div id="income-filter-dropdown">
-        <div class="filter-option" data-range="0-25000">$25 000 and less</div>
-        <div class="filter-option" data-range="25000-50000">$25 000 - $50 000</div>
-        <div class="filter-option" data-range="50000-75000">$50 000 - $75 000</div>
-        <div class="filter-option" data-range="75000-100000">$75 000 - $100 000</div>
-        <div class="filter-option" data-range="100000+">$100 000 and more</div>
+    <!-- Випадаючий список для фільтру за втратами -->
+    <div id="sales-filter-dropdown">
+        <div class="income-filter-option" data-range="0-25000">$25 000 and less</div>
+        <div class="income-filter-option" data-range="25000-50000">$25 000 - $50 000</div>
+        <div class="income-filter-option" data-range="50000-75000">$50 000 - $75 000</div>
+        <div class="income-filter-option" data-range="75000-100000">$75 000 - $100 000</div>
+        <div class="income-filter-option" data-range="100000">$100 000 and more</div>
     </div>
 
     <script>
-        var map = L.map('map').setView([49.265571, 35.091304], 6);
+        var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -207,39 +209,100 @@
         { name: "Grain processing and reception complex", coords: [47.933947, 35.93723], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3544403-na-zaporizzi-vorog-obstrilav-agropidpriemstvo-ta-elevator-zniseni-365-tonn-sonasniku.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/360_240_1691335392-520.jpg", lostIncome: "162 938 $" },
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
-        
+    
         var markers = [];
 
-        // Додати код для створення та відображення маркерів і фільтрації тут
+        // Функція для отримання кольору на основі втрат
+        function getColorBySales(sales) {
+            var minColor = [255, 223, 186];
+            var maxColor = [255, 0, 0];
+            var maxSales = 100000;
 
-        document.getElementById('filter-icon').addEventListener('click', function() {
+            var ratio = Math.min(sales / maxSales, 1);
+            var color = minColor.map((min, i) => Math.round(min + (maxColor[i] - min) * ratio));
+            return `rgb(${color.join(',')})`;
+        }
+
+        markersData.forEach(data => {
+            data.lostIncome = parseInt(data.lostIncome.replace(/\D/g, ''), 10);
+            var color = getColorBySales(data.lostIncome);
+            var marker = L.circleMarker(data.coords, {
+                radius: 8,
+                fillColor: color,
+                color: '#000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).bindPopup(`
+                <div style="max-width: 250px;">
+                    <strong>${data.name}</strong><br>
+                    Type of damage: ${data.type}<br>
+                    Lost income: $${data.lostIncome.toLocaleString()}
+                </div>
+            `).addTo(map);
+
+            markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
+        });
+
+        document.getElementById('searchBox').addEventListener('input', function (e) {
+            var value = e.target.value.toLowerCase();
+            var results = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
+            var resultList = document.getElementById('search-results');
+            resultList.innerHTML = '';
+            results.forEach(result => {
+                var li = document.createElement('li');
+                li.innerHTML = `<img src="${result.image}"><span>${result.name}</span>`;
+                li.addEventListener('click', () => map.setView(result.coords, 12));
+                resultList.appendChild(li);
+            });
+            resultList.style.display = results.length > 0 ? 'block' : 'none';
+        });
+
+        map.on('click', function () {
+            document.getElementById('search-results').style.display = 'none';
+        });
+
+        document.getElementById('filter-icon').addEventListener('click', function () {
             var dropdown = document.getElementById('filter-dropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
 
-        document.getElementById('income-filter-icon').addEventListener('click', function() {
-            var dropdown = document.getElementById('income-filter-dropdown');
+        document.getElementById('sales-filter-icon').addEventListener('click', function () {
+            var dropdown = document.getElementById('sales-filter-dropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
 
         document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function() {
+            option.addEventListener('click', function () {
                 option.classList.toggle('selected');
-                filterMarkers();
+                applyFilters();
             });
         });
 
-        function filterMarkers() {
-            var selectedTypes = Array.from(document.querySelectorAll('#filter-dropdown .selected')).map(el => el.getAttribute('data-type'));
-            var selectedRanges = Array.from(document.querySelectorAll('#income-filter-dropdown .selected')).map(el => el.getAttribute('data-range'));
+        document.querySelectorAll('.income-filter-option').forEach(option => {
+            option.addEventListener('click', function () {
+                document.querySelectorAll('.income-filter-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.toggle('selected');
+                applyFilters();
+            });
+        });
+
+        function applyFilters() {
+            var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
+            var selectedIncomeRange = document.querySelector('.income-filter-option.selected')?.getAttribute('data-range');
 
             markers.forEach(({ marker, type, lostIncome }) => {
                 var showByType = selectedTypes.length === 0 || selectedTypes.includes(type);
-                var showByIncome = selectedRanges.length === 0 || selectedRanges.some(range => {
-                    if (range === '100000+') return lostIncome > 100000;
-                    var [min, max] = range.split('-').map(Number);
-                    return lostIncome >= min && lostIncome <= max;
-                });
+                var showByIncome = true;
+
+                if (selectedIncomeRange) {
+         var [minIncome, maxIncome] = selectedIncomeRange.split('-').map(Number);
+                    if (maxIncome) {
+                        showByIncome = lostIncome >= minIncome && lostIncome <= maxIncome;
+                    } else {
+                        showByIncome = lostIncome >= minIncome;
+                    }
+                }
 
                 if (showByType && showByIncome) {
                     marker.addTo(map);
