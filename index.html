@@ -140,6 +140,23 @@
         <div class="income-filter-option" data-range="100000-">$100 000 and more</div>
     </div>
 
+    <!-- Легенда для типів пошкодження -->
+<div id="legend" style="display: none; position: fixed; bottom: 10px; left: 10px; z-index: 1000; background: rgba(255, 255, 255, 0.7); padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+    <strong>Legend</strong>
+    <div style="display: flex; align-items: center; margin-top: 5px;">
+        <div style="width: 20px; height: 20px; background-color: darkgreen; margin-right: 5px;"></div>
+        Minor Damage
+    </div>
+    <div style="display: flex; align-items: center; margin-top: 5px;">
+        <div style="width: 20px; height: 20px; background-color: orange; margin-right: 5px;"></div>
+        Significant Damage
+    </div>
+    <div style="display: flex; align-items: center; margin-top: 5px;">
+        <div style="width: 20px; height: 20px; background-color: red; margin-right: 5px;"></div>
+        Destroyed
+    </div>
+</div>
+    
     <script>
         var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
@@ -287,6 +304,18 @@ function applyColoring() {
 
 // Виклик функції для початкового зафарбування
 applyColoring();
+
+        // Слухач для відображення/приховування легенди
+document.querySelectorAll('input[name="colorMode"]').forEach(input => {
+    input.addEventListener('change', () => {
+        var legend = document.getElementById('legend');
+        if (input.value === 'type') {
+            legend.style.display = 'block';
+        } else {
+            legend.style.display = 'none';
+        }
+    });
+});
         
         document.getElementById('searchBox').addEventListener('input', function (e) {
             var value = e.target.value.toLowerCase();
