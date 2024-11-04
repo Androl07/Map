@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
+        /* Загальні стилі */
         #searchBox {
             position: fixed;
             top: 10px;
@@ -47,19 +48,6 @@
         #search-results li:hover {
             background-color: #f0f0f0;
         }
-        .filter-option {
-            display: flex;
-            align-items: center;
-            padding: 5px 0;
-            cursor: pointer;
-        }
-        .filter-option img {
-            margin-right: 10px;
-            width: 20px;
-        }
-        .filter-option.selected {
-            font-weight: bold;
-        }
         #filter-icon {
             position: fixed;
             top: 10px;
@@ -78,55 +66,32 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-        #lost-income-filter {
-            position: fixed;
-            top: 60px;
-            left: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            display: none;
-        }
     </style>
 </head>
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
 
+    <!-- Іконка фільтра -->
     <div id="filter-icon">
         <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
     </div>
 
+    <!-- Випадаючий список для фільтра -->
     <div id="filter-dropdown">
-        <div class="filter-option" data-type="minor damage">
-            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
-            <span>Minor Damage</span>
-        </div>
-        <div class="filter-option" data-type="significant damage">
-            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png" />
-            <span>Significant Damage</span>
-        </div>
-        <div class="filter-option" data-type="destroyed">
-            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" />
-            <span>Destroyed</span>
-        </div>
-    </div>
-
-    <div id="lost-income-filter">
-        <label for="lost-income-range">Lost income range:</label>
-        <select id="lost-income-range">
+        <div class="filter-option" data-type="minor damage">Minor Damage</div>
+        <div class="filter-option" data-type="significant damage">Significant Damage</div>
+        <div class="filter-option" data-type="destroyed">Destroyed</div>
+        <label for="sales-filter">Lost income filter:</label>
+        <select id="sales-filter">
             <option value="0-25000">0 - 25,000 $</option>
             <option value="25000-50000">25,000 - 50,000 $</option>
             <option value="50000-75000">50,000 - 75,000 $</option>
             <option value="75000-100000">75,000 - 100,000 $</option>
-            <option value="100000+">100,000 $+</option>
+            <option value="100000+">100,000+ $</option>
         </select>
-        <button id="apply-income-filter">Apply</button>
     </div>
 
     <input id="searchBox" type="text" placeholder="Search for location...">
-
     <ul id="search-results"></ul>
 
     <script>
@@ -208,28 +173,33 @@
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
 
-        // Функція для отримання кольору за допомогою градієнта від світло-оранжевого до яскраво-червоного
-        function getColorBySales(sales) {
-            var minSales = 0;
-            var maxSales = 200000;
-            var normalizedValue = (sales - minSales) / (maxSales - minSales);
-            var r = Math.min(255, Math.floor(255 * normalizedValue));
-            var g = Math.max(165, Math.floor(165 * (1 - normalizedValue)));
-            var b = 0;
 
-            return `rgb(${r}, ${g}, ${b})`;
+        // Функція для отримання кольору за сумою lost income
+        function getColorBySales(sales) {
+            const minSales = 0;
+            const maxSales = 200000;
+            let ratio = (sales - minSales) / (maxSales - minSales);
+            ratio = Math.max(0, Math.min(1, ratio)); // Обмеження значення між 0 і 1
+
+            // Визначення градієнтного кольору (від світло-оранжевого до яскраво-червоного)
+            const startColor = [255, 200, 0]; // світло-оранжевий
+            const endColor = [255, 0, 0]; // яскраво-червоний
+
+            const r = Math.round(startColor[0] + ratio * (endColor[0] - startColor[0]));
+            const g = Math.round(startColor[1] + ratio * (endColor[1] - startColor[1]));
+            const b = Math.round(startColor[2] + ratio * (endColor[2] - startColor[2]));
+
+            return `rgb(${r},${g},${b})`; // Повернення кольору у форматі RGB
         }
 
         markersData.forEach(function(data) {
-            var color = getColorBySales(parseInt(data.lostIncome.replace(/[^0-9]/g, ''), 10));
-            var marker = L.marker(data.coords, {
-                icon: L.icon({
-                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColorBySales(data.lostIncome)}.png`,
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41]
-                })
+            var color = getColorBySales(parseInt(data.lostIncome.replace(/[^0-9]/g, '')));
+            var marker = L.circleMarker(data.coords, {
+                color: color,
+                radius: 8,
+                fillOpacity: 0.8
             }).bindPopup(`
-                <div style="max-width: 250px; background-color: ${color}; padding: 10px; border-radius: 5px;">
+                <div style="max-width: 250px;">
                     <div class="popup-title">
                         <a href="${data.link}" target="_blank">${data.name}</a>
                     </div>
@@ -238,27 +208,43 @@
                     <br><strong>Lost income:</strong> $${data.lostIncome}
                 </div>
             `).addTo(map);
-            markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
+            markers.push({ marker, type: data.type, lostIncome: parseInt(data.lostIncome.replace(/[^0-9]/g, '')) });
         });
 
         document.getElementById('filter-icon').addEventListener('click', function() {
             var dropdown = document.getElementById('filter-dropdown');
-            var incomeFilter = document.getElementById('lost-income-filter');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-            incomeFilter.style.display = incomeFilter.style.display === 'none' ? 'block' : 'none';
         });
 
-        document.getElementById('apply-income-filter').addEventListener('click', function() {
-            var range = document.getElementById('lost-income-range').value;
-            var [minValue, maxValue] = range.split('-').map(v => v === '+' ? Infinity : parseInt(v, 10));
+        document.getElementById('sales-filter').addEventListener('change', function() {
+            var selectedRange = this.value.split('-');
+            var minIncome = parseInt(selectedRange[0], 10);
+            var maxIncome = selectedRange[1] === '+' ? Infinity : parseInt(selectedRange[1], 10);
 
             markers.forEach(({ marker, lostIncome }) => {
-                var incomeValue = parseInt(lostIncome.replace(/[^0-9]/g, ''), 10);
-                if (incomeValue >= minValue && incomeValue <= maxValue) {
+                if (lostIncome >= minIncome && lostIncome <= maxIncome) {
                     marker.addTo(map);
                 } else {
                     map.removeLayer(marker);
                 }
+            });
+        });
+
+        map.on('click', function() {
+            document.getElementById('search-results').style.display = 'none';
+        });
+
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                option.classList.toggle('selected');
+                var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
+                markers.forEach(({ marker, type }) => {
+                    if (selectedTypes.length === 0 || selectedTypes.includes(type)) {
+                        marker.addTo(map);
+                    } else {
+                        map.removeLayer(marker);
+                    }
+                });
             });
         });
 
@@ -275,25 +261,6 @@
             });
             resultList.style.display = results.length > 0 ? 'block' : 'none';
         });
-
-        map.on('click', function() {
-            document.getElementById('search-results').style.display = 'none
-        });
-
-        document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function() {
-                option.classList.toggle('selected');
-                var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
-                markers.forEach(({ marker, type }) => {
-                    if (selectedTypes.length === 0 || selectedTypes.includes(type)) {
-                        marker.addTo(map);
-                    } else {
-                        map.removeLayer(marker);
-                    }
-                });
-            });
-        });
     </script>
 </body>
 </html>
-
