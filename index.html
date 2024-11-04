@@ -7,34 +7,24 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        /* Загальні стилі */
-        #searchBox, #income-filter-icon, #filter-icon {
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+        #filter-icon, #income-filter-icon {
             position: fixed;
             top: 10px;
             z-index: 1000;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-            background-color: white;
-        }
-
-        #searchBox {
-            left: 10px;
-            width: 300px;
-        }
-
-        #income-filter-icon {
-            left: 320px;
             cursor: pointer;
+            width: 40px;
         }
-
         #filter-icon {
-            right: 10px;
-            cursor: pointer;
+            right: 60px;
         }
-
-        #income-filter-dropdown, #filter-dropdown {
+        #income-filter-icon {
+            right: 110px;
+        }
+        #filter-dropdown, #income-filter-dropdown {
             display: none;
             position: fixed;
             top: 60px;
@@ -44,85 +34,61 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
-
-        #income-filter-dropdown {
-            left: 320px;
-        }
-
         #filter-dropdown {
-            right: 10px;
+            right: 60px;
         }
-
-        .filter-option {
-            display: flex;
-            align-items: center;
-            padding: 5px 0;
+        #income-filter-dropdown {
+            right: 110px;
+        }
+        .filter-option, .income-filter-option {
+            padding: 5px;
             cursor: pointer;
+            display: block;
         }
-
-        .filter-option img {
-            margin-right: 10px;
-            width: 20px;
+        .filter-option:hover, .income-filter-option:hover {
+            background-color: #f0f0f0;
         }
-
-        .filter-option.selected {
+        .selected {
             font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div id="map" style="width: 100%; height: 100vh;"></div>
+    <div id="map"></div>
 
-    <!-- Пошуковий інпут -->
-    <input id="searchBox" type="text" placeholder="Search for location...">
-
-    <!-- Іконка фільтра за lost income -->
-    <div id="income-filter-icon">
-        <img src="https://cdn-icons-png.flaticon.com/512/1784/1784598.png" width="40" alt="Income Filter">
-    </div>
-
-    <!-- Іконка фільтра за типом пошкодження -->
+    <!-- Іконка фільтра по типу ушкодження -->
     <div id="filter-icon">
-        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Type Filter">
+        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="Filter Type of Damage">
     </div>
 
-    <!-- Випадаючий список для фільтра по типу ушкодження -->
+    <!-- Іконка фільтра по lost income -->
+    <div id="income-filter-icon">
+        <img src="https://cdn-icons-png.flaticon.com/512/1828/1828961.png" alt="Filter Lost Income">
+    </div>
+
+    <!-- Випадаючий список для фільтру по типу ушкодження -->
     <div id="filter-dropdown">
-        <div class="filter-option" data-type="minor damage">
-            <span>Minor Damage</span>
-        </div>
-        <div class="filter-option" data-type="significant damage">
-            <span>Significant Damage</span>
-        </div>
-        <div class="filter-option" data-type="destroyed">
-            <span>Destroyed</span>
-        </div>
+        <div class="filter-option" data-type="minor damage">Minor Damage</div>
+        <div class="filter-option" data-type="significant damage">Significant Damage</div>
+        <div class="filter-option" data-type="destroyed">Destroyed</div>
     </div>
 
-    <!-- Випадаючий список для фільтра по lost income -->
+    <!-- Випадаючий список для фільтру по lost income -->
     <div id="income-filter-dropdown">
-        <div class="filter-option" data-income="0-25000">
-            <span>0 - 25,000</span>
-        </div>
-        <div class="filter-option" data-income="25000-50000">
-            <span>25,000 - 50,000</span>
-        </div>
-        <div class="filter-option" data-income="50000-75000">
-            <span>50,000 - 75,000</span>
-        </div>
-        <div class="filter-option" data-income="75000-100000">
-            <span>75,000 - 100,000</span>
-        </div>
-        <div class="filter-option" data-income="100000+">
-            <span>100,000+</span>
-        </div>
+        <div class="income-filter-option" data-range="0-25000">$25,000 and less</div>
+        <div class="income-filter-option" data-range="25000-50000">$25,000 - $50,000</div>
+        <div class="income-filter-option" data-range="50000-75000">$50,000 - $75,000</div>
+        <div class="income-filter-option" data-range="75000-100000">$75,000 - $100,000</div>
+        <div class="income-filter-option" data-range="100000-Infinity">$100,000 and more</div>
     </div>
 
     <script>
         var map = L.map('map').setView([49.265571, 35.091304], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
 
-var markersData = [
+        var markersData = [
         { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg", lostIncome: "13 482 $" },
         { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg", lostIncome: "15 302 $" },
         { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489-na-teritorii-silgosppidpriemstva-na-harkivsini-vnaslidok-obstrilu-zgoriv-kombajn.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg", lostIncome: "47 815 $" },
@@ -195,37 +161,40 @@ var markersData = [
         { name: "Grain processing and reception complex", coords: [47.933947, 35.93723], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3544403-na-zaporizzi-vorog-obstrilav-agropidpriemstvo-ta-elevator-zniseni-365-tonn-sonasniku.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/360_240_1691335392-520.jpg", lostIncome: "162 938 $" },
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
-        
+       
         var markers = [];
 
-        // Функція для отримання кольору маркерів з градієнтом
-        function getColorBySales(sales) {
-            var maxSales = 200000; // Приклад максимальної суми для градієнта
-            var normalizedValue = Math.min(sales / maxSales, 1);
-            var color = `rgba(255, ${255 - normalizedValue * 255}, ${255 - normalizedValue * 128}, 0.9)`;
-            return color;
+        function getGradientColorBySales(sales) {
+            var numericSales = parseInt(sales.replace(/[\s$]/g, ''));
+            var minSales = 0;
+            var maxSales = 200000;
+            var percent = Math.min(Math.max((numericSales - minSales) / (maxSales - minSales), 0), 1);
+            var startColor = [255, 165, 0]; // Світло-оранжевий
+            var endColor = [255, 0, 0]; // Яскраво-червоний
+
+            var color = startColor.map((start, i) => Math.round(start + percent * (endColor[i] - start)));
+            return `rgb(${color.join(',')})`;
         }
 
-        // Додати маркери
         markersData.forEach(function(data) {
-            var color = getColorBySales(data.lostIncome);
+            var color = getGradientColorBySales(data.lostIncome);
             var marker = L.circleMarker(data.coords, {
-                radius: 10,
                 color: color,
-                fillColor: color,
-                fillOpacity: 0.9
+                radius: 8,
+                fillOpacity: 0.6
             }).bindPopup(`
-                <div>
-                    <strong>${data.name}</strong>
+                <div style="max-width: 250px;">
+                    <div class="popup-title">
+                        <a href="${data.link}" target="_blank">${data.name}</a>
+                    </div>
+                    <img src="${data.image}" style="width: 100%; border-radius: 5px;">
                     <br><strong>Type of damage:</strong> ${data.type}
-                    <br><strong>Lost income:</strong> $${data.lostIncome}
-                    <br><a href="${data.link}" target="_blank">More info</a>
+                    <br><strong>Lost income:</strong> ${data.lostIncome}
                 </div>
             `).addTo(map);
             markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
         });
 
-        // Відображення фільтрів
         document.getElementById('filter-icon').addEventListener('click', function() {
             var dropdown = document.getElementById('filter-dropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
@@ -238,20 +207,9 @@ var markersData = [
 
         document.querySelectorAll('.filter-option').forEach(option => {
             option.addEventListener('click', function() {
-                option.classList.toggle('selected');
-                var selectedTypes = Array.from(document.querySelectorAll('#filter-dropdown .filter-option.selected')).map(el => el.getAttribute('data-type'));
-                var selectedIncomes = Array.from(document.querySelectorAll('#income-filter-dropdown .filter-option.selected')).map(el => el.getAttribute('data-income'));
-
-                markers.forEach(({ marker, type, lostIncome }) => {
-                    var showType = selectedTypes.length === 0 || selectedTypes.includes(type);
-                    var showIncome = selectedIncomes.length === 0 || selectedIncomes.some(range => {
-                        var [min, max] = range.split('-');
-                        min = parseInt(min);
-                        max = max === '+' ? Infinity : parseInt(max);
-                        return lostIncome >= min && lostIncome <= max;
-                    });
-
-                    if (showType && showIncome) {
+                var selectedType = option.getAttribute('data-type');
+                markers.forEach(({ marker, type }) => {
+                    if (type === selectedType || selectedType === "all") {
                         marker.addTo(map);
                     } else {
                         map.removeLayer(marker);
@@ -260,9 +218,21 @@ var markersData = [
             });
         });
 
-        map.on('click', function() {
-            document.getElementById('filter-dropdown').style.display = 'none';
-            document.getElementById('income-filter-dropdown').style.display = 'none';
+        document.querySelectorAll('.income-filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                var range = option.getAttribute('data-range').split('-');
+                var minValue = parseInt(range[0].replace(/[\s$]/g, ''));
+                var maxValue = range[1] ? parseInt(range[1].replace(/[\s$]/g, '')) : Infinity;
+
+                markers.forEach(({ marker, lostIncome }) => {
+                    var incomeValue = parseInt(lostIncome.replace(/[\s$]/g, ''));
+                    if (incomeValue >= minValue && incomeValue <= maxValue) {
+                        marker.addTo(map);
+                    } else {
+                        map.removeLayer(marker);
+                    }
+                });
+            });
         });
     </script>
 </body>
