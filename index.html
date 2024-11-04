@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        /* Загальні стилі */
         #searchBox {
             position: fixed;
             top: 10px;
@@ -48,8 +47,6 @@
         #search-results li:hover {
             background-color: #f0f0f0;
         }
-
-        /* Стилі для фільтрів */
         .filter-option {
             display: flex;
             align-items: center;
@@ -81,7 +78,7 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-        #sales-filter {
+        #lost-income-filter {
             position: fixed;
             top: 60px;
             left: 10px;
@@ -97,12 +94,10 @@
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
 
-    <!-- Іконка фільтра -->
     <div id="filter-icon">
         <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
     </div>
 
-    <!-- Випадаючий список для фільтру по типу ушкодження -->
     <div id="filter-dropdown">
         <div class="filter-option" data-type="minor damage">
             <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" />
@@ -118,13 +113,16 @@
         </div>
     </div>
 
-    <!-- Повзунок для фільтру за lost sales -->
-    <div id="sales-filter">
-        <label for="sales-range-from">Lost sales від:</label>
-        <input id="sales-range-from" type="number" min="0" value="0" style="width: 80px; margin-right: 10px;">
-        <label for="sales-range-to">до:</label>
-        <input id="sales-range-to" type="number" value="200000" style="width: 80px;">
-        <button id="apply-sales-filter" style="margin-left: 10px;">Застосувати</button>
+    <div id="lost-income-filter">
+        <label for="lost-income-range">Lost income range:</label>
+        <select id="lost-income-range">
+            <option value="0-25000">0 - 25,000 $</option>
+            <option value="25000-50000">25,000 - 50,000 $</option>
+            <option value="50000-75000">50,000 - 75,000 $</option>
+            <option value="75000-100000">75,000 - 100,000 $</option>
+            <option value="100000+">100,000 $+</option>
+        </select>
+        <button id="apply-income-filter">Apply</button>
     </div>
 
     <input id="searchBox" type="text" placeholder="Search for location...">
@@ -210,17 +208,28 @@
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
 
+        // Функція для отримання кольору за допомогою градієнта від світло-оранжевого до яскраво-червоного
+        function getColorBySales(sales) {
+            var minSales = 0;
+            var maxSales = 200000;
+            var normalizedValue = (sales - minSales) / (maxSales - minSales);
+            var r = Math.min(255, Math.floor(255 * normalizedValue));
+            var g = Math.max(165, Math.floor(165 * (1 - normalizedValue)));
+            var b = 0;
+
+            return `rgb(${r}, ${g}, ${b})`;
+        }
 
         markersData.forEach(function(data) {
-            var color = getColorBySales(data.lostIncome);
+            var color = getColorBySales(parseInt(data.lostIncome.replace(/[^0-9]/g, ''), 10));
             var marker = L.marker(data.coords, {
                 icon: L.icon({
-                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
+                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColorBySales(data.lostIncome)}.png`,
                     iconSize: [25, 41],
                     iconAnchor: [12, 41]
                 })
             }).bindPopup(`
-                <div style="max-width: 250px;">
+                <div style="max-width: 250px; background-color: ${color}; padding: 10px; border-radius: 5px;">
                     <div class="popup-title">
                         <a href="${data.link}" target="_blank">${data.name}</a>
                     </div>
@@ -232,26 +241,20 @@
             markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
         });
 
-        function getColorBySales(sales) {
-            if (sales < 20000) return 'green';
-            if (sales >= 20000 && sales < 100000) return 'orange';
-            return 'red';
-        }
-
         document.getElementById('filter-icon').addEventListener('click', function() {
             var dropdown = document.getElementById('filter-dropdown');
-            var salesFilter = document.getElementById('sales-filter');
+            var incomeFilter = document.getElementById('lost-income-filter');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-            salesFilter.style.display = salesFilter.style.display === 'none' ? 'block' : 'none';
+            incomeFilter.style.display = incomeFilter.style.display === 'none' ? 'block' : 'none';
         });
 
-        document.getElementById('apply-sales-filter').addEventListener('click', function() {
-            var fromValue = parseInt(document.getElementById('sales-range-from').value, 10);
-            var toValue = parseInt(document.getElementById('sales-range-to').value, 10);
+        document.getElementById('apply-income-filter').addEventListener('click', function() {
+            var range = document.getElementById('lost-income-range').value;
+            var [minValue, maxValue] = range.split('-').map(v => v === '+' ? Infinity : parseInt(v, 10));
 
             markers.forEach(({ marker, lostIncome }) => {
-                var incomeValue = parseInt(lostIncome, 10);
-                if (incomeValue >= fromValue && incomeValue <= toValue) {
+                var incomeValue = parseInt(lostIncome.replace(/[^0-9]/g, ''), 10);
+                if (incomeValue >= minValue && incomeValue <= maxValue) {
                     marker.addTo(map);
                 } else {
                     map.removeLayer(marker);
@@ -274,7 +277,7 @@
         });
 
         map.on('click', function() {
-            document.getElementById('search-results').style.display = 'none';
+            document.getElementById('search-results').style.display = 'none
         });
 
         document.querySelectorAll('.filter-option').forEach(option => {
@@ -293,3 +296,4 @@
     </script>
 </body>
 </html>
+
