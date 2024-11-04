@@ -22,18 +22,51 @@
             border: 1px solid #ccc;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-        #filter-icon, #income-filter-icon {
+        #search-results {
+            display: none;
+            position: fixed;
+            top: 50px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            list-style: none;
+            padding: 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            width: 300px;
+        }
+        #search-results li {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+        #search-results img {
+            margin-right: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+        }
+        #search-results li:hover {
+            background-color: #f0f0f0;
+        }
+        #filter-icon,
+        #sales-filter-icon {
             position: fixed;
             top: 10px;
-            right: 70px;
+            right: 10px;
             z-index: 1000;
             cursor: pointer;
-            margin-left: 10px;
         }
-        #income-filter-icon {
-            right: 130px;
+        #sales-filter-icon {
+            right: 60px;
         }
-        .filter-dropdown {
+        .filter-icon img {
+            width: 40px;
+        }
+        #filter-dropdown,
+        #sales-filter-dropdown {
             display: none;
             position: fixed;
             top: 60px;
@@ -44,38 +77,60 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-        .filter-option {
-            display: block;
-            margin: 5px 0;
+        #sales-filter-dropdown {
+            right: 60px;
+        }
+        .filter-option,
+        .income-filter-option {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
             cursor: pointer;
         }
-        .filter-option.selected {
-            background-color: #ddd;
+        .filter-option img,
+        .income-filter-option img {
+            margin-right: 10px;
+            width: 20px;
+        }
+        .filter-option.selected,
+        .income-filter-option.selected {
             font-weight: bold;
+            background-color: #ddd;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
+
+    <!-- Пошук -->
     <input id="searchBox" type="text" placeholder="Search for location...">
-    <div id="filter-icon">
-        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
+    <ul id="search-results"></ul>
+
+    <!-- Іконка фільтру за типом -->
+    <div id="filter-icon" class="filter-icon">
+        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="Filter Type">
     </div>
-    <div id="income-filter-icon">
-        <img src="https://cdn-icons-png.flaticon.com/512/2826/2826610.png" width="40" alt="Income Filter">
+    <!-- Іконка фільтру за втратами -->
+    <div id="sales-filter-icon" class="filter-icon">
+        <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" alt="Filter Sales">
     </div>
-    <div id="filter-dropdown" class="filter-dropdown">
+
+    <!-- Випадаючий список для фільтру за типом -->
+    <div id="filter-dropdown">
         <div class="filter-option" data-type="minor damage">Minor Damage</div>
         <div class="filter-option" data-type="significant damage">Significant Damage</div>
         <div class="filter-option" data-type="destroyed">Destroyed</div>
     </div>
-    <div id="income-filter-dropdown" class="filter-dropdown">
-        <div class="filter-option" data-range="0-25000">$25 000 and less</div>
-        <div class="filter-option" data-range="25000-50000">$25 000 - $50 000</div>
-        <div class="filter-option" data-range="50000-75000">$50 000 - $75 000</div>
-        <div class="filter-option" data-range="75000-100000">$75 000 - $100 000</div>
-        <div class="filter-option" data-range="100000-">$100 000 and more</div>
+
+    <!-- Випадаючий список для фільтру за втратами -->
+    <div id="sales-filter-dropdown">
+        <div class="income-filter-option" data-range="0-25000">$25 000 and less</div>
+        <div class="income-filter-option" data-range="25000-50000">$25 000 - $50 000</div>
+        <div class="income-filter-option" data-range="50000-75000">$50 000 - $75 000</div>
+        <div class="income-filter-option" data-range="75000-100000">$75 000 - $100 000</div>
+        <div class="income-filter-option" data-range="100000-">$100 000 and more</div>
     </div>
+
     <script>
         var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
@@ -154,45 +209,92 @@
         { name: "Grain processing and reception complex", coords: [47.933947, 35.93723], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3544403-na-zaporizzi-vorog-obstrilav-agropidpriemstvo-ta-elevator-zniseni-365-tonn-sonasniku.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/360_240_1691335392-520.jpg", lostIncome: "162 938 $" },
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
+        
+        var markers = []; // Масив для зберігання маркерів
 
-        var markers = []; // Array to store marker instances
+        // Функція для отримання кольору на основі втрат
+        function getColorBySales(sales) {
+            var minColor = [255, 223, 186];
+            var maxColor = [255, 0, 0];
+            var maxSales = 100000;
 
-        // Function to get gradient color based on lost income
-        function getGradientColor(income) {
-            if (income <= 25000) return '#ffcccb';
-            if (income > 25000 && income <= 50000) return '#ffb3b3';
-            if (income > 50000 && income <= 75000) return '#ff9999';
-            if (income > 75000 && income <= 100000) return '#ff6666';
-            return '#ff3333';
+            var ratio = Math.min(sales / maxSales, 1);
+            var color = minColor.map((min, i) => Math.round(min + (maxColor[i] - min) * ratio));
+            return `rgb(${color.join(',')})`;
         }
 
-        // Function to add markers to the map
         markersData.forEach(data => {
-            var incomeValue = parseInt(data.lostIncome.replace(/\D/g, ''), 10);
-            var marker = L.marker(data.coords).addTo(map);
-            marker.bindPopup(`
-                <div style="background-color: ${getGradientColor(incomeValue)}; padding: 10px; border-radius: 5px; max-width: 250px;">
-                    <h3>${data.name}</h3>
-                    <img src="${data.image}" alt="Image" style="width: 100%; height: auto; margin-bottom: 10px;">
-                    <p>Type: ${data.type}</p>
-                    <p>Lost Income: ${data.lostIncome}</p>
-                    <a href="${data.link}" target="_blank">More Info</a>
+            data.lostIncome = parseInt(data.lostIncome.replace(/\D/g, ''), 10);
+            var color = getColorBySales(data.lostIncome);
+            var marker = L.circleMarker(data.coords, {
+                radius: 8,
+                fillColor: color,
+                color: '#000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).bindPopup(`
+                <div style="max-width: 250px;">
+                    <strong>${data.name}</strong><br>
+                    Type of damage: ${data.type}<br>
+                    Lost income: $${data.lostIncome.toLocaleString()}
                 </div>
-            `);
+            `).addTo(map);
+
             markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
         });
 
-        // Function to update markers based on selected filters
-        function updateMarkers() {
-            var selectedTypes = Array.from(document.querySelectorAll('#filter-dropdown .filter-option.selected')).map(el => el.getAttribute('data-type'));
-            var selectedIncomeRanges = Array.from(document.querySelectorAll('#income-filter-dropdown .filter-option.selected')).map(el => el.getAttribute('data-range'));
+        document.getElementById('searchBox').addEventListener('input', function (e) {
+            var value = e.target.value.toLowerCase();
+            var results = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
+            var resultList = document.getElementById('search-results');
+            resultList.innerHTML = '';
+            results.forEach(result => {
+                var li = document.createElement('li');
+                li.innerHTML = `<img src="${result.image}"><span>${result.name}</span>`;
+                li.addEventListener('click', () => map.setView(result.coords, 12));
+                resultList.appendChild(li);
+            });
+            resultList.style.display = results.length > 0 ? 'block' : 'none';
+        });
 
-            markers.forEach(({ marker, type, lostIncome }) => {
+        map.on('click', function () {
+            document.getElementById('search-results').style.display = 'none';
+        });
+
+        document.getElementById('filter-icon').addEventListener('click', function () {
+            var dropdown = document.getElementById('filter-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.getElementById('sales-filter-icon').addEventListener('click', function () {
+            var dropdown = document.getElementById('sales-filter-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function () {
+                option.classList.toggle('selected');
+                applyFilters();
+            });
+        });
+
+        document.querySelectorAll('.income-filter-option').forEach(option => {
+            option.addEventListener('click', function () {
+                option.classList.toggle('selected');
+                applyFilters();
+            });
+        });
+
+        function applyFilters() {
+            var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
+            var selectedIncomeRanges = Array.from(document.querySelectorAll('.income-filter-option.selected')).map(el => el.getAttribute('data-range'));
+
+                    markers.forEach(({ marker, type, lostIncome }) => {
                 var showByType = selectedTypes.length === 0 || selectedTypes.includes(type);
                 var showByIncome = selectedIncomeRanges.length === 0 || selectedIncomeRanges.some(range => {
                     var [min, max] = range.split('-').map(n => n ? parseInt(n, 10) : Infinity);
-                    var incomeValue = parseInt(lostIncome.replace(/\D/g, ''), 10);
-                    return incomeValue >= min && incomeValue <= max;
+                    return lostIncome >= min && lostIncome <= max;
                 });
 
                 if (showByType && showByIncome) {
@@ -202,45 +304,7 @@
                 }
             });
         }
-
-        // Event listeners for type filter
-        document.getElementById('filter-icon').addEventListener('click', function() {
-            var dropdown = document.getElementById('filter-dropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        });
-
-        document.querySelectorAll('#filter-dropdown .filter-option').forEach(option => {
-            option.addEventListener('click', function() {
-                option.classList.toggle('selected');
-                updateMarkers();
-            });
-        });
-
-        // Event listeners for income filter
-        document.getElementById('income-filter-icon').addEventListener('click', function() {
-            var dropdown = document.getElementById('income-filter-dropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        });
-
-        document.querySelectorAll('#income-filter-dropdown .filter-option').forEach(option => {
-            option.addEventListener('click', function() {
-                option.classList.toggle('selected');
-                updateMarkers();
-            });
-        });
-
-        // Search functionality
-        document.getElementById('searchBox').addEventListener('input', function() {
-            var query = this.value.toLowerCase();
-            markers.forEach(({ marker }) => {
-                var popupContent = marker.getPopup().getContent().toLowerCase();
-                if (popupContent.includes(query)) {
-                    marker.addTo(map);
-                } else {
-                    map.removeLayer(marker);
-                }
-            });
-        });
     </script>
 </body>
 </html>
+
