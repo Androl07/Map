@@ -140,6 +140,16 @@
         <div class="income-filter-option" data-range="100000-">$100 000 and more</div>
     </div>
 
+    <!--Показати легенду для початкового режиму при завантаженні карти -->
+window.onload = function() {
+    var typeLegend = document.getElementById('legend');
+    var incomeLegend = document.getElementById('income-legend');
+
+   <!--Початково показати легенду для втрат доходу -->
+    incomeLegend.style.display = 'block';
+    typeLegend.style.display = 'none';
+};
+    
     <!-- Легенда для втрат доходу -->
 <div id="income-legend" style="display: none; position: fixed; bottom: 10px; left: 10px; z-index: 1000; background: rgba(255, 255, 255, 0.7); padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
     <strong>Legend</strong>
