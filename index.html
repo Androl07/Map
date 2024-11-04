@@ -1,73 +1,128 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Map with Gradient Markers</title>
+    <title>Interactive Map with Filters</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        #searchBox {
+        /* Загальні стилі */
+        #searchBox, #income-filter-icon, #filter-icon {
             position: fixed;
             top: 10px;
-            left: 10px;
             z-index: 1000;
-            width: 300px;
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            background-color: white;
         }
-        #filter-icon {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
+
+        #searchBox {
+            left: 10px;
+            width: 300px;
+        }
+
+        #income-filter-icon {
+            left: 320px;
             cursor: pointer;
         }
-        #sales-filter {
+
+        #filter-icon {
+            right: 10px;
+            cursor: pointer;
+        }
+
+        #income-filter-dropdown, #filter-dropdown {
+            display: none;
             position: fixed;
             top: 60px;
-            left: 10px;
             z-index: 1000;
             background: white;
             padding: 10px;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            display: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #income-filter-dropdown {
+            left: 320px;
+        }
+
+        #filter-dropdown {
+            right: 10px;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+            cursor: pointer;
+        }
+
+        .filter-option img {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        .filter-option.selected {
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div id="map" style="width: 100%; height: 100vh;"></div>
 
-    <!-- Іконка фільтра -->
-    <div id="filter-icon">
-        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
-    </div>
-
-    <!-- Випадаючий список для фільтру за lost income -->
-    <div id="sales-filter">
-        <label for="sales-range">Виберіть діапазон втрат:</label>
-        <select id="sales-range">
-            <option value="all">Всі</option>
-            <option value="0-25000">0 - 25 000 $</option>
-            <option value="25000-50000">25 000 - 50 000 $</option>
-            <option value="50000-75000">50 000 - 75 000 $</option>
-            <option value="75000-100000">75 000 - 100 000 $</option>
-            <option value="100000+">100 000 $+</option>
-        </select>
-        <button id="apply-sales-filter" style="margin-left: 10px;">Застосувати</button>
-    </div>
-
+    <!-- Пошуковий інпут -->
     <input id="searchBox" type="text" placeholder="Search for location...">
 
-    <script>
-        var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
+    <!-- Іконка фільтра за lost income -->
+    <div id="income-filter-icon">
+        <img src="https://cdn-icons-png.flaticon.com/512/1784/1784598.png" width="40" alt="Income Filter">
+    </div>
 
-        var markersData = [
+    <!-- Іконка фільтра за типом пошкодження -->
+    <div id="filter-icon">
+        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Type Filter">
+    </div>
+
+    <!-- Випадаючий список для фільтра по типу ушкодження -->
+    <div id="filter-dropdown">
+        <div class="filter-option" data-type="minor damage">
+            <span>Minor Damage</span>
+        </div>
+        <div class="filter-option" data-type="significant damage">
+            <span>Significant Damage</span>
+        </div>
+        <div class="filter-option" data-type="destroyed">
+            <span>Destroyed</span>
+        </div>
+    </div>
+
+    <!-- Випадаючий список для фільтра по lost income -->
+    <div id="income-filter-dropdown">
+        <div class="filter-option" data-income="0-25000">
+            <span>0 - 25,000</span>
+        </div>
+        <div class="filter-option" data-income="25000-50000">
+            <span>25,000 - 50,000</span>
+        </div>
+        <div class="filter-option" data-income="50000-75000">
+            <span>50,000 - 75,000</span>
+        </div>
+        <div class="filter-option" data-income="75000-100000">
+            <span>75,000 - 100,000</span>
+        </div>
+        <div class="filter-option" data-income="100000+">
+            <span>100,000+</span>
+        </div>
+    </div>
+
+    <script>
+        var map = L.map('map').setView([49.265571, 35.091304], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+var markersData = [
         { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg", lostIncome: "13 482 $" },
         { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg", lostIncome: "15 302 $" },
         { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489-na-teritorii-silgosppidpriemstva-na-harkivsini-vnaslidok-obstrilu-zgoriv-kombajn.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg", lostIncome: "47 815 $" },
@@ -140,69 +195,74 @@
         { name: "Grain processing and reception complex", coords: [47.933947, 35.93723], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3544403-na-zaporizzi-vorog-obstrilav-agropidpriemstvo-ta-elevator-zniseni-365-tonn-sonasniku.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/360_240_1691335392-520.jpg", lostIncome: "162 938 $" },
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
-
-        var markers = [];
         
+        var markers = [];
+
+        // Функція для отримання кольору маркерів з градієнтом
         function getColorBySales(sales) {
-            // Нормалізація значення для створення градієнту
-            var min = 0;
-            var max = 200000;
-            var normalized = Math.min((sales - min) / (max - min), 1);
-            var colorValue = 255 - Math.round(normalized * 255);
-            return `rgb(255, ${colorValue}, ${colorValue})`;
+            var maxSales = 200000; // Приклад максимальної суми для градієнта
+            var normalizedValue = Math.min(sales / maxSales, 1);
+            var color = `rgba(255, ${255 - normalizedValue * 255}, ${255 - normalizedValue * 128}, 0.9)`;
+            return color;
         }
 
-        // Додавання маркерів на карту
+        // Додати маркери
         markersData.forEach(function(data) {
-            var salesValue = parseInt(data.lostIncome.replace(/[^\d]/g, '')); // Видалення зайвих символів
-            var color = getColorBySales(salesValue);
+            var color = getColorBySales(data.lostIncome);
             var marker = L.circleMarker(data.coords, {
-                color: color,
                 radius: 10,
-                fillOpacity: 0.7
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.9
             }).bindPopup(`
-                <div style="max-width: 250px;">
-                    <div class="popup-title">
-                        <a href="${data.link}" target="_blank">${data.name}</a>
-                    </div>
-                    <img src="${data.image}" style="width: 100%; border-radius: 5px;">
+                <div>
+                    <strong>${data.name}</strong>
                     <br><strong>Type of damage:</strong> ${data.type}
-                    <br><strong>Lost income:</strong> $${salesValue}
+                    <br><strong>Lost income:</strong> $${data.lostIncome}
+                    <br><a href="${data.link}" target="_blank">More info</a>
                 </div>
             `).addTo(map);
-            markers.push({ marker, lostIncome: salesValue });
+            markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
         });
 
+        // Відображення фільтрів
         document.getElementById('filter-icon').addEventListener('click', function() {
-            var salesFilter = document.getElementById('sales-filter');
-            salesFilter.style.display = salesFilter.style.display === 'none' ? 'block' : 'none';
+            var dropdown = document.getElementById('filter-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
 
-        document.getElementById('apply-sales-filter').addEventListener('click', function() {
-            var selectedRange = document.getElementById('sales-range').value;
-            var min, max;
+        document.getElementById('income-filter-icon').addEventListener('click', function() {
+            var dropdown = document.getElementById('income-filter-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
 
-            if (selectedRange === 'all') {
-                min = 0;
-                max = Infinity;
-            } else if (selectedRange === '100000+') {
-                min = 100000;
-                max = Infinity;
-            } else {
-                [min, max] = selectedRange.split('-').map(Number);
-            }
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                option.classList.toggle('selected');
+                var selectedTypes = Array.from(document.querySelectorAll('#filter-dropdown .filter-option.selected')).map(el => el.getAttribute('data-type'));
+                var selectedIncomes = Array.from(document.querySelectorAll('#income-filter-dropdown .filter-option.selected')).map(el => el.getAttribute('data-income'));
 
-            markers.forEach(({ marker, lostIncome }) => {
-                if (lostIncome >= min && lostIncome <= max) {
-                    marker.addTo(map);
-                } else {
-                    map.removeLayer(marker);
-                }
+                markers.forEach(({ marker, type, lostIncome }) => {
+                    var showType = selectedTypes.length === 0 || selectedTypes.includes(type);
+                    var showIncome = selectedIncomes.length === 0 || selectedIncomes.some(range => {
+                        var [min, max] = range.split('-');
+                        min = parseInt(min);
+                        max = max === '+' ? Infinity : parseInt(max);
+                        return lostIncome >= min && lostIncome <= max;
+                    });
+
+                    if (showType && showIncome) {
+                        marker.addTo(map);
+                    } else {
+                        map.removeLayer(marker);
+                    }
+                });
             });
         });
 
         map.on('click', function() {
-            document.getElementById('sales-filter').style.display = 'none';
+            document.getElementById('filter-dropdown').style.display = 'none';
+            document.getElementById('income-filter-dropdown').style.display = 'none';
         });
     </script>
 </body>
