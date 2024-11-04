@@ -7,7 +7,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        /* Загальні стилі */
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
         #searchBox {
             position: fixed;
             top: 10px;
@@ -19,7 +22,6 @@
             border: 1px solid #ccc;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-
         #filter-icon, #income-filter-icon {
             position: fixed;
             top: 10px;
@@ -28,11 +30,9 @@
             cursor: pointer;
             margin-left: 10px;
         }
-
         #income-filter-icon {
             right: 130px;
         }
-
         .filter-dropdown {
             display: none;
             position: fixed;
@@ -44,13 +44,11 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-
         .filter-option {
             display: block;
             margin: 5px 0;
             cursor: pointer;
         }
-
         .filter-option.selected {
             background-color: #ddd;
             font-weight: bold;
@@ -58,29 +56,19 @@
     </style>
 </head>
 <body>
-    <div id="map" style="width: 100%; height: 100vh;"></div>
-
-    <!-- Пошук -->
+    <div id="map"></div>
     <input id="searchBox" type="text" placeholder="Search for location...">
-
-    <!-- Іконка фільтру за типом пошкодження -->
     <div id="filter-icon">
         <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
     </div>
-
-    <!-- Іконка фільтру за втратами доходу -->
     <div id="income-filter-icon">
         <img src="https://cdn-icons-png.flaticon.com/512/2826/2826610.png" width="40" alt="Income Filter">
     </div>
-
-    <!-- Випадаючий список фільтру за типом пошкодження -->
     <div id="filter-dropdown" class="filter-dropdown">
         <div class="filter-option" data-type="minor damage">Minor Damage</div>
         <div class="filter-option" data-type="significant damage">Significant Damage</div>
         <div class="filter-option" data-type="destroyed">Destroyed</div>
     </div>
-
-    <!-- Випадаючий список фільтру за втратами доходу -->
     <div id="income-filter-dropdown" class="filter-dropdown">
         <div class="filter-option" data-range="0-25000">$25 000 and less</div>
         <div class="filter-option" data-range="25000-50000">$25 000 - $50 000</div>
@@ -88,7 +76,6 @@
         <div class="filter-option" data-range="75000-100000">$75 000 - $100 000</div>
         <div class="filter-option" data-range="100000-">$100 000 and more</div>
     </div>
-
     <script>
         var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
@@ -167,52 +154,25 @@
         { name: "Grain processing and reception complex", coords: [47.933947, 35.93723], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3544403-na-zaporizzi-vorog-obstrilav-agropidpriemstvo-ta-elevator-zniseni-365-tonn-sonasniku.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/360_240_1691335392-520.jpg", lostIncome: "162 938 $" },
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
-        
-        var markers = []; // Масив для зберігання маркерів
 
-        // Створення маркерів
+        var markers = []; // Array to store marker instances
+
+        // Function to add markers to the map
         markersData.forEach(data => {
-            var marker = L.marker(data.coords).bindPopup(`
-                <div>
+            var marker = L.marker(data.coords).addTo(map);
+            marker.bindPopup(`
+                <div style="max-width: 250px;">
                     <h3>${data.name}</h3>
-                    <img src="${data.image}" alt="${data.name}" style="width:100%; height:auto;"/>
+                    <img src="${data.image}" alt="Image" style="width: 100%; height: auto; margin-bottom: 10px;">
+                    <p>Type: ${data.type}</p>
                     <p>Lost Income: ${data.lostIncome}</p>
                     <a href="${data.link}" target="_blank">More Info</a>
                 </div>
             `);
             markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
-            marker.addTo(map); // Додаємо маркер до карти під час ініціалізації
         });
 
-        // Обробник для фільтра за типом пошкодження
-        document.getElementById('filter-icon').addEventListener('click', function() {
-            var dropdown = document.getElementById('filter-dropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        });
-
-        // Обробник для фільтра за втратами доходу
-        document.getElementById('income-filter-icon').addEventListener('click', function() {
-            var dropdown = document.getElementById('income-filter-dropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        });
-
-        // Вибір фільтрів за типом пошкодження
-        document.querySelectorAll('#filter-dropdown .filter-option').forEach(option => {
-            option.addEventListener('click', function() {
-                option.classList.toggle('selected');
-                updateMarkers();
-            });
-        });
-
-        // Вибір фільтрів за втратами доходу
-        document.querySelectorAll('#income-filter-dropdown .filter-option').forEach(option => {
-            option.addEventListener('click', function() {
-                option.classList.toggle('selected');
-                updateMarkers();
-            });
-        });
-
-        // Функція для оновлення маркерів
+        // Function to update markers based on selected filters
         function updateMarkers() {
             var selectedTypes = Array.from(document.querySelectorAll('#filter-dropdown .filter-option.selected')).map(el => el.getAttribute('data-type'));
             var selectedIncomeRanges = Array.from(document.querySelectorAll('#income-filter-dropdown .filter-option.selected')).map(el => el.getAttribute('data-range'));
@@ -232,6 +192,45 @@
                 }
             });
         }
+
+        // Event listeners for type filter
+        document.getElementById('filter-icon').addEventListener('click', function() {
+            var dropdown = document.getElementById('filter-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.querySelectorAll('#filter-dropdown .filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                option.classList.toggle('selected');
+                updateMarkers();
+            });
+        });
+
+        // Event listeners for income filter
+        document.getElementById('income-filter-icon').addEventListener('click', function() {
+            var dropdown = document.getElementById('income-filter-dropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.querySelectorAll('#income-filter-dropdown .filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                option.classList.toggle('selected');
+                updateMarkers();
+            });
+        });
+
+        // Search functionality
+        document.getElementById('searchBox').addEventListener('input', function() {
+            var query = this.value.toLowerCase();
+            markers.forEach(({ marker }) => {
+                var nameLower = marker.getPopup().getContent().toLowerCase();
+                if (nameLower.includes(query)) {
+                    marker.addTo(map);
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
+        });
     </script>
 </body>
 </html>
