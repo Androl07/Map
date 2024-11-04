@@ -37,7 +37,6 @@
         #search-results li:hover {
             background-color: #f0f0f0;
         }
-
         /* Стили для фільтра */
         .filter-option {
             display: flex;
@@ -114,8 +113,7 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Додати маркери на карту
-        var markers = [
+    var markers = [
          { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg", lostIncome: "13 482 $" },
         { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg", lostIncome: "15 302 $" },
         { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489-na-teritorii-silgosppidpriemstva-na-harkivsini-vnaslidok-obstrilu-zgoriv-kombajn.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg", lostIncome: "47 815 $" },
@@ -194,28 +192,28 @@
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
 
+        // Змінна markersData повинна містити ваші дані.
         markersData.forEach(function(data) {
-    var marker = L.marker(data.coords, {
-        icon: L.icon({ 
-            iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, 
-            iconSize: [25, 41], 
-            iconAnchor: [12, 41] 
-        })
-    }).bindPopup(`
-        <div style="max-width: 250px;">
-            <div class="popup-title">
-                <a href="${data.link}" target="_blank">${data.name}</a>
-            </div>
-            <img src="${data.image}" style="width: 100%; border-radius: 5px;">
-            <br><strong>lost income:</strong> ${data.lostIncome}
-        </div>
-    `).addTo(map);
-});
+            var marker = L.marker(data.coords, {
+                icon: L.icon({ 
+                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, 
+                    iconSize: [25, 41], 
+                    iconAnchor: [12, 41] 
+                })
+            }).bindPopup(`
+                <div style="max-width: 250px;">
+                    <div class="popup-title">
+                        <a href="${data.link}" target="_blank">${data.name}</a>
+                    </div>
+                    <img src="${data.image}" style="width: 100%; border-radius: 5px;">
+                    <br><strong>lost income:</strong> ${data.lostIncome}
+                </div>
+            `).addTo(map);
+        });
 
-// Функція для визначення кольору іконки на основі типу пошкодження
-function getColor(type) {
-    return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
-}
+        function getColor(type) {
+            return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
+        }
 
         // Пошук
         document.getElementById('searchBox').addEventListener('input', function(e) {
@@ -247,11 +245,11 @@ function getColor(type) {
             option.addEventListener('click', function() {
                 option.classList.toggle('selected');
                 var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
-                markers.forEach(({ marker, type }) => {
-                    if (selectedTypes.length === 0 || selectedTypes.includes(type)) {
-                        marker.addTo(map);
+                markersData.forEach(data => {
+                    if (selectedTypes.length === 0 || selectedTypes.includes(data.type)) {
+                        data.marker.addTo(map);
                     } else {
-                        map.removeLayer(marker);
+                        map.removeLayer(data.marker);
                     }
                 });
             });
