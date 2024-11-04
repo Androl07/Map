@@ -16,18 +16,20 @@
             top: 10px;
             z-index: 1000;
             cursor: pointer;
-            width: 40px;
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
         }
         #filter-icon {
-            right: 60px;
+            right: 80px;
         }
         #income-filter-icon {
-            right: 110px;
+            right: 120px;
         }
         #filter-dropdown, #income-filter-dropdown {
             display: none;
             position: fixed;
-            top: 60px;
+            top: 50px;
             z-index: 1000;
             background: white;
             padding: 10px;
@@ -35,10 +37,10 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
         #filter-dropdown {
-            right: 60px;
+            right: 80px;
         }
         #income-filter-dropdown {
-            right: 110px;
+            right: 120px;
         }
         .filter-option, .income-filter-option {
             padding: 5px;
@@ -49,7 +51,18 @@
             background-color: #f0f0f0;
         }
         .selected {
-            font-weight: bold;
+            background-color: #000;
+            color: #fff;
+        }
+        #searchBox {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            width: 250px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -82,11 +95,14 @@
         <div class="income-filter-option" data-range="100000-Infinity">$100,000 and more</div>
     </div>
 
+    <input id="searchBox" type="text" placeholder="Search for location...">
+
     <script>
-        var map = L.map('map').setView([49.265571, 35.091304], 6);
+        var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19
         }).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         var markersData = [
         { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg", lostIncome: "13 482 $" },
@@ -161,7 +177,7 @@
         { name: "Grain processing and reception complex", coords: [47.933947, 35.93723], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3544403-na-zaporizzi-vorog-obstrilav-agropidpriemstvo-ta-elevator-zniseni-365-tonn-sonasniku.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/360_240_1691335392-520.jpg", lostIncome: "162 938 $" },
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
-       
+        
         var markers = [];
 
         function getGradientColorBySales(sales) {
@@ -169,7 +185,7 @@
             var minSales = 0;
             var maxSales = 200000;
             var percent = Math.min(Math.max((numericSales - minSales) / (maxSales - minSales), 0), 1);
-            var startColor = [255, 165, 0]; // Світло-оранжевий
+            var startColor = [255, 200, 100]; // Світло-оранжевий
             var endColor = [255, 0, 0]; // Яскраво-червоний
 
             var color = startColor.map((start, i) => Math.round(start + percent * (endColor[i] - start)));
@@ -181,7 +197,7 @@
             var marker = L.circleMarker(data.coords, {
                 color: color,
                 radius: 8,
-                fillOpacity: 0.6
+                fillOpacity: 0.7
             }).bindPopup(`
                 <div style="max-width: 250px;">
                     <div class="popup-title">
@@ -207,33 +223,43 @@
 
         document.querySelectorAll('.filter-option').forEach(option => {
             option.addEventListener('click', function() {
-                var selectedType = option.getAttribute('data-type');
-                markers.forEach(({ marker, type }) => {
-                    if (type === selectedType || selectedType === "all") {
-                        marker.addTo(map);
-                    } else {
-                        map.removeLayer(marker);
-                    }
-                });
+                option.classList.toggle('selected');
+                applyFilters();
             });
         });
 
         document.querySelectorAll('.income-filter-option').forEach(option => {
             option.addEventListener('click', function() {
-                var range = option.getAttribute('data-range').split('-');
-                var minValue = parseInt(range[0].replace(/[\s$]/g, ''));
-                var maxValue = range[1] ? parseInt(range[1].replace(/[\s$]/g, '')) : Infinity;
-
-                markers.forEach(({ marker, lostIncome }) => {
-                    var incomeValue = parseInt(lostIncome.replace(/[\s$]/g, ''));
-                    if (incomeValue >= minValue && incomeValue <= maxValue) {
-                        marker.addTo(map);
-                    } else {
-                        map.removeLayer(marker);
-                    }
-                });
+                document.querySelectorAll('.income-filter-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.toggle('selected');
+                applyFilters();
             });
         });
+
+        function applyFilters() {
+            var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
+            var selectedRangeOption = document.querySelector('.income-filter-option.selected');
+            var minValue = 0;
+            var maxValue = Infinity;
+
+            if (selectedRangeOption) {
+                var range = selectedRangeOption.getAttribute('data-range').split('-');
+                minValue = parseInt(range[0].replace(/[\s$]/g, ''));
+                maxValue = range[1] ? parseInt(range[1].replace(/[\s$]/g, '')) : Infinity;
+            }
+
+            markers.forEach(({ marker, type, lostIncome }) => {
+                var incomeValue = parseInt(lostIncome.replace(/[\s$]/g, ''));
+                var typeMatches = selectedTypes.length === 0 || selectedTypes.includes(type);
+                var incomeMatches = incomeValue >= minValue && incomeValue <= maxValue;
+
+                if (typeMatches && incomeMatches) {
+                    marker.addTo(map);
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
+        }
     </script>
 </body>
 </html>
