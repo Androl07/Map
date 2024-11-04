@@ -317,18 +317,6 @@ function applyColoring() {
 // Виклик функції для початкового зафарбування
 applyColoring();
 
-        // Слухач для відображення/приховування легенди
-document.querySelectorAll('input[name="colorMode"]').forEach(input => {
-    input.addEventListener('change', () => {
-        var legend = document.getElementById('legend');
-        if (input.value === 'type') {
-            legend.style.display = 'block';
-        } else {
-            legend.style.display = 'none';
-        }
-    });
-});
-
         // Слухач для відображення/приховування легенд
 document.querySelectorAll('input[name="colorMode"]').forEach(input => {
     input.addEventListener('change', () => {
@@ -341,6 +329,18 @@ document.querySelectorAll('input[name="colorMode"]').forEach(input => {
         } else if (input.value === 'income') {
             incomeLegend.style.display = 'block';
             typeLegend.style.display = 'none';
+        }
+    });
+});
+        
+        // Слухач для відображення/приховування легенди
+document.querySelectorAll('input[name="colorMode"]').forEach(input => {
+    input.addEventListener('change', () => {
+        var legend = document.getElementById('legend');
+        if (input.value === 'type') {
+            legend.style.display = 'block';
+        } else {
+            legend.style.display = 'none';
         }
     });
 });
