@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Map with Search and Filters</title>
+    <title>Interactive Map with Gradient Markers</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
-        /* Загальні стилі */
         #searchBox {
             position: fixed;
             top: 10px;
@@ -19,35 +18,6 @@
             border: 1px solid #ccc;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-        #search-results {
-            display: none;
-            position: fixed;
-            top: 50px;
-            left: 10px;
-            z-index: 1000;
-            background: white;
-            list-style: none;
-            padding: 0;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            width: 300px;
-        }
-        #search-results li {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            cursor: pointer;
-            border-bottom: 1px solid #ddd;
-        }
-        #search-results img {
-            margin-right: 10px;
-            width: 40px;
-            height: 40px;
-            border-radius: 5px;
-        }
-        #search-results li:hover {
-            background-color: #f0f0f0;
-        }
         #filter-icon {
             position: fixed;
             top: 10px;
@@ -55,16 +25,16 @@
             z-index: 1000;
             cursor: pointer;
         }
-        #filter-dropdown {
-            display: none;
+        #sales-filter {
             position: fixed;
             top: 60px;
-            right: 10px;
+            left: 10px;
             z-index: 1000;
             background: white;
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: none;
         }
     </style>
 </head>
@@ -76,23 +46,21 @@
         <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" width="40" alt="Filter">
     </div>
 
-    <!-- Випадаючий список для фільтра -->
-    <div id="filter-dropdown">
-        <div class="filter-option" data-type="minor damage">Minor Damage</div>
-        <div class="filter-option" data-type="significant damage">Significant Damage</div>
-        <div class="filter-option" data-type="destroyed">Destroyed</div>
-        <label for="sales-filter">Lost income filter:</label>
-        <select id="sales-filter">
-            <option value="0-25000">0 - 25,000 $</option>
-            <option value="25000-50000">25,000 - 50,000 $</option>
-            <option value="50000-75000">50,000 - 75,000 $</option>
-            <option value="75000-100000">75,000 - 100,000 $</option>
-            <option value="100000+">100,000+ $</option>
+    <!-- Випадаючий список для фільтру за lost income -->
+    <div id="sales-filter">
+        <label for="sales-range">Виберіть діапазон втрат:</label>
+        <select id="sales-range">
+            <option value="all">Всі</option>
+            <option value="0-25000">0 - 25 000 $</option>
+            <option value="25000-50000">25 000 - 50 000 $</option>
+            <option value="50000-75000">50 000 - 75 000 $</option>
+            <option value="75000-100000">75 000 - 100 000 $</option>
+            <option value="100000+">100 000 $+</option>
         </select>
+        <button id="apply-sales-filter" style="margin-left: 10px;">Застосувати</button>
     </div>
 
     <input id="searchBox" type="text" placeholder="Search for location...">
-    <ul id="search-results"></ul>
 
     <script>
         var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
@@ -173,31 +141,25 @@
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
 
-
-        // Функція для отримання кольору за сумою lost income
+        var markers = [];
+        
         function getColorBySales(sales) {
-            const minSales = 0;
-            const maxSales = 200000;
-            let ratio = (sales - minSales) / (maxSales - minSales);
-            ratio = Math.max(0, Math.min(1, ratio)); // Обмеження значення між 0 і 1
-
-            // Визначення градієнтного кольору (від світло-оранжевого до яскраво-червоного)
-            const startColor = [255, 200, 0]; // світло-оранжевий
-            const endColor = [255, 0, 0]; // яскраво-червоний
-
-            const r = Math.round(startColor[0] + ratio * (endColor[0] - startColor[0]));
-            const g = Math.round(startColor[1] + ratio * (endColor[1] - startColor[1]));
-            const b = Math.round(startColor[2] + ratio * (endColor[2] - startColor[2]));
-
-            return `rgb(${r},${g},${b})`; // Повернення кольору у форматі RGB
+            // Нормалізація значення для створення градієнту
+            var min = 0;
+            var max = 200000;
+            var normalized = Math.min((sales - min) / (max - min), 1);
+            var colorValue = 255 - Math.round(normalized * 255);
+            return `rgb(255, ${colorValue}, ${colorValue})`;
         }
 
+        // Додавання маркерів на карту
         markersData.forEach(function(data) {
-            var color = getColorBySales(parseInt(data.lostIncome.replace(/[^0-9]/g, '')));
+            var salesValue = parseInt(data.lostIncome.replace(/[^\d]/g, '')); // Видалення зайвих символів
+            var color = getColorBySales(salesValue);
             var marker = L.circleMarker(data.coords, {
                 color: color,
-                radius: 8,
-                fillOpacity: 0.8
+                radius: 10,
+                fillOpacity: 0.7
             }).bindPopup(`
                 <div style="max-width: 250px;">
                     <div class="popup-title">
@@ -205,24 +167,33 @@
                     </div>
                     <img src="${data.image}" style="width: 100%; border-radius: 5px;">
                     <br><strong>Type of damage:</strong> ${data.type}
-                    <br><strong>Lost income:</strong> $${data.lostIncome}
+                    <br><strong>Lost income:</strong> $${salesValue}
                 </div>
             `).addTo(map);
-            markers.push({ marker, type: data.type, lostIncome: parseInt(data.lostIncome.replace(/[^0-9]/g, '')) });
+            markers.push({ marker, lostIncome: salesValue });
         });
 
         document.getElementById('filter-icon').addEventListener('click', function() {
-            var dropdown = document.getElementById('filter-dropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            var salesFilter = document.getElementById('sales-filter');
+            salesFilter.style.display = salesFilter.style.display === 'none' ? 'block' : 'none';
         });
 
-        document.getElementById('sales-filter').addEventListener('change', function() {
-            var selectedRange = this.value.split('-');
-            var minIncome = parseInt(selectedRange[0], 10);
-            var maxIncome = selectedRange[1] === '+' ? Infinity : parseInt(selectedRange[1], 10);
+        document.getElementById('apply-sales-filter').addEventListener('click', function() {
+            var selectedRange = document.getElementById('sales-range').value;
+            var min, max;
+
+            if (selectedRange === 'all') {
+                min = 0;
+                max = Infinity;
+            } else if (selectedRange === '100000+') {
+                min = 100000;
+                max = Infinity;
+            } else {
+                [min, max] = selectedRange.split('-').map(Number);
+            }
 
             markers.forEach(({ marker, lostIncome }) => {
-                if (lostIncome >= minIncome && lostIncome <= maxIncome) {
+                if (lostIncome >= min && lostIncome <= max) {
                     marker.addTo(map);
                 } else {
                     map.removeLayer(marker);
@@ -231,35 +202,7 @@
         });
 
         map.on('click', function() {
-            document.getElementById('search-results').style.display = 'none';
-        });
-
-        document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function() {
-                option.classList.toggle('selected');
-                var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
-                markers.forEach(({ marker, type }) => {
-                    if (selectedTypes.length === 0 || selectedTypes.includes(type)) {
-                        marker.addTo(map);
-                    } else {
-                        map.removeLayer(marker);
-                    }
-                });
-            });
-        });
-
-        document.getElementById('searchBox').addEventListener('input', function(e) {
-            var value = e.target.value.toLowerCase();
-            var results = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
-            var resultList = document.getElementById('search-results');
-            resultList.innerHTML = '';
-            results.forEach(result => {
-                var li = document.createElement('li');
-                li.innerHTML = `<img src="${result.image}"><span>${result.name}</span>`;
-                li.addEventListener('click', () => map.setView(result.coords, 12));
-                resultList.appendChild(li);
-            });
-            resultList.style.display = results.length > 0 ? 'block' : 'none';
+            document.getElementById('sales-filter').style.display = 'none';
         });
     </script>
 </body>
