@@ -113,8 +113,8 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    var markers = [
-         { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg", lostIncome: "13 482 $" },
+    var markersData = [
+        { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg", lostIncome: "13 482 $" },
         { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg", lostIncome: "15 302 $" },
         { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489-na-teritorii-silgosppidpriemstva-na-harkivsini-vnaslidok-obstrilu-zgoriv-kombajn.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg", lostIncome: "47 815 $" },
         { name: "Hrakiv elevator Novaagro", coords: [50.17398, 35.354574], type: "destroyed", link: "https://elevatorist.com/spetsproekt/192.html", image: "https://elevatorist.com/media/specproject/original/00/00/192/elevator-grakove-31676.jpg", lostIncome: "125 673 $" },
