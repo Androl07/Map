@@ -115,6 +115,15 @@
         <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png" alt="Filter Sales">
     </div>
 
+    <div id="color-switch" style="position: fixed; top: 10px; right: 120px; z-index: 1000;">
+    <label>
+        <input type="radio" name="colorMode" value="income" checked> Lost Income
+    </label>
+    <label>
+        <input type="radio" name="colorMode" value="type"> Type of Damage
+    </label>
+</div>
+    
     <!-- Випадаючий список для фільтру за типом -->
     <div id="filter-dropdown">
         <div class="filter-option" data-type="minor damage">Minor Damage</div>
@@ -246,6 +255,39 @@
     markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
 });
 
+    // Слухач для перемикання кольору
+document.querySelectorAll('input[name="colorMode"]').forEach(input => {
+    input.addEventListener('change', () => {
+        applyColoring();
+    });
+});
+
+// Функція для отримання кольору за типом пошкодження
+function getColorByType(type) {
+    if (type === "minor damage") return "darkgreen";
+    if (type === "significant damage") return "orange";
+    if (type === "destroyed") return "red";
+    return "gray";
+}
+
+// Оновлення кольору маркерів залежно від вибору
+function applyColoring() {
+    var selectedMode = document.querySelector('input[name="colorMode"]:checked').value;
+
+    markers.forEach(({ marker, type, lostIncome }) => {
+        if (selectedMode === "income") {
+            var color = getColorBySales(lostIncome);
+            marker.setStyle({ fillColor: color });
+        } else if (selectedMode === "type") {
+            var color = getColorByType(type);
+            marker.setStyle({ fillColor: color });
+        }
+    });
+}
+
+// Виклик функції для початкового зафарбування
+applyColoring();
+        
         document.getElementById('searchBox').addEventListener('input', function (e) {
             var value = e.target.value.toLowerCase();
             var results = markersData.filter(data => data.name.toLowerCase().includes(value)).slice(0, 5);
