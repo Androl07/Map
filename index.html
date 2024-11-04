@@ -224,25 +224,27 @@
         }
 
         markersData.forEach(data => {
-            data.lostIncome = parseInt(data.lostIncome.replace(/\D/g, ''), 10);
-            var color = getColorBySales(data.lostIncome);
-            var marker = L.circleMarker(data.coords, {
-                radius: 8,
-                fillColor: color,
-                color: '#000',
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8
-            }).bindPopup(`
-                <div style="max-width: 250px;">
-                    <strong>${data.name}</strong><br>
-                    Type of damage: ${data.type}<br>
-                    Lost income: $${data.lostIncome.toLocaleString()}
-                </div>
-            `).addTo(map);
+    data.lostIncome = parseInt(data.lostIncome.replace(/\D/g, ''), 10);
+    var color = getColorBySales(data.lostIncome);
+    var marker = L.circleMarker(data.coords, {
+        radius: 8,
+        fillColor: color,
+        color: '#000',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).bindPopup(`
+        <div style="max-width: 250px;">
+            <strong><a href="${data.link}" target="_blank">${data.name}</a></strong><br>
+            <img src="${data.image}" alt="${data.name}" style="width: 100%; height: auto; margin-top: 5px;"><br>
+            Type of damage: ${data.type}<br>
+            Lost income: $${data.lostIncome.toLocaleString()}<br>
+            <a href="${data.link}" target="_blank">More Info</a>
+        </div>
+    `).addTo(map);
 
-            markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
-        });
+    markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
+});
 
         document.getElementById('searchBox').addEventListener('input', function (e) {
             var value = e.target.value.toLowerCase();
