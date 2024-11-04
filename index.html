@@ -37,6 +37,7 @@
         #search-results li:hover {
             background-color: #f0f0f0;
         }
+
         /* Стили для фільтра */
         .filter-option {
             display: flex;
@@ -50,6 +51,12 @@
         }
         .filter-option.selected {
             font-weight: bold;
+        }
+
+        /* Стиль для повзунка */
+        #sales-range {
+            width: 100%;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -93,6 +100,22 @@
         </div>
     </div>
 
+    <!-- Повзунок для фільтрування за втратами продажів -->
+    <div id="slider-container" style="
+        position: fixed;
+        top: 120px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    ">
+        <label for="sales-range">Filter by lost sales ($):</label>
+        <input type="range" id="sales-range" min="0" max="200000" step="1000" value="100000" oninput="updateSalesFilter(this.value)">
+        <span id="sales-value">100 000 $</span>
+    </div>
+
     <!-- Пошукове поле -->
     <input id="searchBox" type="text" placeholder="Search for location..." style="
         position: fixed;
@@ -113,7 +136,7 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    var markersData = [
+        var markersData = [
         { name: "Agricultural firm 'Noviy Shlyach'", coords: [49.265571, 35.091304], type: "minor damage", link: "https://www.ukrinform.ua/rubric-ato/3771323-zagarbniki-za-dobu-obstrilala-pat-rajoniv-harkivsini.html", image: "https://atn.ua/assets/uploads/2023/10/38-6.jpg", lostIncome: "13 482 $" },
         { name: "Field", coords: [50.261286, 36.42344], type: "minor damage", link: "https://www.ukrinform.ua/rubric-regions/3770050-na-harkivsini-vnoci-vorog-zavdav-raketnogo-udaru-po-pecenigah.html", image: "https://static.ukrinform.com/photos/2023_08/thumb_files/630_360_1691651661-787.jpg", lostIncome: "15 302 $" },
         { name: "Agricultural enterprises", coords: [50.178885, 37.516905], type: "significant damage", link: "https://www.ukrinform.ua/rubric-ato/3760489-na-teritorii-silgosppidpriemstva-na-harkivsini-vnaslidok-obstrilu-zgoriv-kombajn.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694536922-988.jpg", lostIncome: "47 815 $" },
@@ -145,13 +168,9 @@
         { name: "LLC STAROBILSKY ELEVATOR", coords: [49.28582, 38.919792], type: "significant damage", link: "https://www.ostro.org/news/v-polovynkyno-starobelskogo-rajona-pryletelo-v-elevator-okkupanty-greshat-na-himars-foto-i398661", image: "https://www.ostro.org/files_dn/2022/12/24/pol_03.jpg", lostIncome: "71 204 $" },
         { name: "Theft of grain and sunflowers from LLC STAROBILSKY ELEVATOR", coords: [49.285663, 38.919972], type: "significant damage", link: "https://lb.ua/society/2022/11/30/537546_rosiyani_vkrali_tisyachi_tonn_zerna.html", image: "https://i.lb.ua/071/07/63870088220e6.jpeg", lostIncome: "67 345 $" },
         { name: "Theft of grain from HLEBOKOMBINAT", coords: [48.532183, 39.340518], type: "significant damage", link: "https://cfts.org.ua/news/2022/08/25/rosiyani_vkrali_200_tis_tonn_zerna_novogo_vrozhayu_z_lugansko_oblasti_71634", image: "https://cfts.org.ua/imglib/_newimage/news/132190/1068.jpg", lostIncome: "73 890 $" },
-        { name: "KSK 'Alexandria'", coords: [50.57939729, 30.21236802], type: "significant damage", link: "https://hromadske.radio/news/2022/03/22/u-hostomeli-rosiys-ki-okupanty-spalyly-stayniu-razom-iz-kin-my", image: "https://kp.ua/img/article/6463/41_main-v1647939206.webp", lostIncome: "65 432 $" },
         { name: "Dairy farm of 'Agromol' company", coords: [50.0439237, 36.47931591], type: "significant damage", link: "https://2day.kh.ua/ua/kharkow/okupanty-zruynuvaly-fermu-u-kharkivskiy-oblasti", image: "https://2day.kh.ua/sites/default/files/styles/glavnoe/public/2022-03/photoeditorsdk-export_1_1.png?h=31136250&itok=4PGr1hfa", lostIncome: "69 384 $" },
         { name: "Agricultural enterprise", coords: [49.71342442, 36.92529745], type: "significant damage", link: "https://atn.ua/kharkiv/okupanty-na-kharkivshchyni-vypaliuiut-fermy-razom-z-tvarynamy-video-370155/", image: "https://atn.ua/assets/uploads/2022/05/ferma1-1536x1149.jpg", lostIncome: "58 273 $" },
         { name: "Farming", coords: [49.93731686, 36.48851371], type: "significant damage", link: "https://suspilne.media/227968-ratuvala-porosat-ta-ne-pustila-tanki-ak-perezila-okupaciu-fermerka-z-maloi-rogani-na-harkivsini/", image: "https://cdn4.suspilne.media/images/resize/794x1.78/1836b2d855735329.jpg", lostIncome: "64 217 $" },
-        { name: "Dairy farm 'Naporivske'", coords: [51.38357291, 31.39301504], type: "significant damage", link: "https://avm-ua.org/uk/post/rosijski-soldati-vbili-110-koriv-na-molocnij-fermi-v-ukraini", image: "http://storage.avm-ua.org/uploads/2022/02-05-1.jpg", lostIncome: "75 391 $" },
-        { name: "Farming", coords: [51.43611412, 31.36019538], type: "destroyed", link: "https://landlord.ua/news/sytuatsiia-na-tvarynnytskykh-fermakh-ukrainy-pid-chas-viiny-zvit-ho-vidkryti-klitky-ukraina/", image: "https://storage.googleapis.com/otwarteklatki-wp-media/sites/2/2022/06/-%D0%A1%D1%83%D1%81%D0%BF%D1%96%D0%BB%D1%8C%D0%BD%D0%B5-%D0%A7%D0%B5%D1%80%D0%BD%D1%96%D0%B3%D1%96%D0%B2.jpg", lostIncome: "160 438 $" },
-        { name: "Ecopark 'Yasnohorodka'", coords: [50.36862729, 30.0338457], type: "significant damage", link: "https://landlord.ua/news/sytuatsiia-na-tvarynnytskykh-fermakh-ukrainy-pid-chas-viiny-zvit-ho-vidkryti-klitky-ukraina/", image: "https://storage.googleapis.com/otwarteklatki-wp-media/sites/2/2022/06/-%D0%9E%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80-%D0%9C%D0%B5%D0%B4%D0%B2%D0%B5%D0%B4%D1%94%D0%B2-%D0%9D%D0%92-1024x681.png", lostIncome: "59 471 $" },
         { name: "Farming", coords: [47.74650011, 36.07481071], type: "significant damage", link: "https://landlord.ua/news/sytuatsiia-na-tvarynnytskykh-fermakh-ukrainy-pid-chas-viiny-zvit-ho-vidkryti-klitky-ukraina/", image: "https://storage.googleapis.com/otwarteklatki-wp-media/sites/2/2022/06/-%D0%97%D0%B0%D0%BF%D0%BE%D1%80%D1%96%D0%B7%D1%8C%D0%BA%D0%B0-%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D0%BD%D0%B0-%D0%B2%D1%96%D0%B8%CC%86%D1%81%D1%8C%D0%BA%D0%BE%D0%B2%D0%B0-%D0%B0%D0%B4%D0%BC%D1%96%D0%BD%D1%96%D1%81%D1%82%D1%80%D0%B0%D1%86%D1%96%D1%8F-1024x768.jpg", lostIncome: "63 295 $" },
         { name: "Poultry farm", coords: [46.85770341, 33.48261678], type: "significant damage", link: "https://lb.ua/society/2023/05/26/557211_rf_obstrilyala_hersonskiy_oblasti.html", image: "https://i.lb.ua/021/04/647063e2bee28.jpeg", lostIncome: "70 123 $" },
         { name: "Farming", coords: [47.49849027, 33.91773731], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3518845-na-hersonsini-rosijski-raketi-vlucili-v-fermu-i-silgosptehniku.html", image: "https://static.ukrinform.com/photos/2022_06/thumb_files/630_360_1656592649-509.jpg", lostIncome: "145 783 $" },
@@ -165,7 +184,6 @@
         { name: "'Factory of agricultural machinery' LLC", coords: [48.61198733, 37.99194574], type: "destroyed", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/photo_2022-08-26_08-48-31.jpg", lostIncome: "155 837 $" },
         { name: "Kramatorsk agricultural zone", coords: [48.75222765, 37.53912449], type: "destroyed", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/1_NAvH1ha.jpg", lostIncome: "149 981 $" },
         { name: "Elevator of 'Agrofirma Agrotis' LLC", coords: [48.77392507, 37.58774757], type: "significant damage", link: "https://reukraine.shtab.net/", image: "https://reukraine.shtab.net/uploads/2022-03-12_01.38.48.jpg", lostIncome: "79 482 $" },
-        { name: "Old Kostiantyn elevator", coords: [49.74898414, 27.17410936], type: "significant damage", link: "https://fakty.com.ua/ua/proisshestvija/20230806-na-hmelnychchyni-znovu-lunayut-vybuhy-zmi/", image: "https://cdn.fakty.com.ua/wp-content/uploads/2023/08/06/64cf6a51ec330_image_name-768x432.jpg", lostIncome: "68 374 $" },
         { name: "Agrofirm Bilozerskyi", coords: [46.58081322, 32.46483344], type: "destroyed", link: "https://www.pravda.com.ua/news/2023/07/16/7411583/", image: "https://www.radiosvoboda.org/a/photo-obstrel-zashita-zhizn-poteri-rossiiskaya-voina/32498490.html", lostIncome: "158 204 $" },
         { name: "Novoslobodske", coords: [51.36781466, 33.93963532], type: "destroyed", link: "https://lb.ua/society/2022/08/11/526007_rosiya_obstrilyala_sumshchinu_zgorilo.html", image: "https://i.lb.ua/077/14/62f53f5cef46a.jpeg", lostIncome: "142 937 $" },
         { name: "U-Port Ochakov", coords: [46.63604065, 31.58278411], type: "significant damage", link: "https://ukranews.com/ua/news/880064-rosiyany-znyshhyly-tysyachi-tonn-zerna-pry-obstrilah-ochakova-na-mykolayivshhyni", image: "https://ukranews.com/upload/media/2022/07/24/62dcd7cfc8ae3-snaryad_v_pole.jpg.webp", lostIncome: "73 619 $" },
@@ -192,28 +210,54 @@
         { name: "Yakov Marychenko's farm", coords: [47.583265, 35.716107], type: "destroyed", link: "https://www.ukrinform.ua/rubric-regions/3761595-stoav-na-kolinah-i-plakav.html", image: "https://static.ukrinform.com/photos/2023_09/thumb_files/630_360_1694764274-418.jpg", lostIncome: "154 610 $" }
         ];
 
-        // Змінна markersData повинна містити ваші дані.
         markersData.forEach(function(data) {
+            var popupColor = getPopupColor(data.lostIncome);
             var marker = L.marker(data.coords, {
-                icon: L.icon({ 
-                    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, 
-                    iconSize: [25, 41], 
-                    iconAnchor: [12, 41] 
-                })
+                icon: L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${getColor(data.type)}.png`, iconSize: [25, 41], iconAnchor: [12, 41] })
             }).bindPopup(`
-                <div style="max-width: 250px;">
+                <div style="max-width: 250px; background-color: ${popupColor}; padding: 10px; border-radius: 5px;">
                     <div class="popup-title">
                         <a href="${data.link}" target="_blank">${data.name}</a>
                     </div>
+                    <p><strong>Type of damage:</strong> ${data.type}</p>
+                    <p><strong>Lost income:</strong> ${data.lostIncome}</p>
                     <img src="${data.image}" style="width: 100%; border-radius: 5px;">
-                    <br><strong>lost income:</strong> ${data.lostIncome}
                 </div>
             `).addTo(map);
+            markers.push({ marker, lostIncome: data.lostIncome, type: data.type });
         });
 
         function getColor(type) {
             return type === 'minor damage' ? 'green' : type === 'significant damage' ? 'orange' : 'red';
         }
+
+        function getPopupColor(lostIncome) {
+            var income = parseInt(lostIncome.replace(/\s|\$/g, ''));
+            if (income < 50000) {
+                return '#d4edda'; // Light green for small losses
+            } else if (income < 100000) {
+                return '#fff3cd'; // Light yellow for moderate losses
+            } else {
+                return '#f8d7da'; // Light red for high losses
+            }
+        }
+
+        function updateSalesFilter(value) {
+            document.getElementById('sales-value').textContent = value.toLocaleString() + ' $';
+            markers.forEach(({ marker, lostIncome }) => {
+                var income = parseInt(lostIncome.replace(/\s|\$/g, ''));
+                if (income <= value) {
+                    marker.addTo(map);
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
+        }
+
+        // Ініціалізуйте повзунок значенням
+        document.getElementById('sales-range').addEventListener('input', function() {
+            updateSalesFilter(this.value);
+        });
 
         // Пошук
         document.getElementById('searchBox').addEventListener('input', function(e) {
@@ -236,7 +280,7 @@
         });
 
         // Показати/приховати фільтр
-        document.getElementById('filter-icon').addEventListener('click', function() {
+                document.getElementById('filter-icon').addEventListener('click', function() {
             var dropdown = document.getElementById('filter-dropdown');
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
@@ -245,11 +289,11 @@
             option.addEventListener('click', function() {
                 option.classList.toggle('selected');
                 var selectedTypes = Array.from(document.querySelectorAll('.filter-option.selected')).map(el => el.getAttribute('data-type'));
-                markersData.forEach(data => {
-                    if (selectedTypes.length === 0 || selectedTypes.includes(data.type)) {
-                        data.marker.addTo(map);
+                markers.forEach(({ marker, type }) => {
+                    if (selectedTypes.length === 0 || selectedTypes.includes(type)) {
+                        marker.addTo(map);
                     } else {
-                        map.removeLayer(data.marker);
+                        map.removeLayer(marker);
                     }
                 });
             });
@@ -257,3 +301,4 @@
     </script>
 </body>
 </html>
+
