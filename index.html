@@ -170,6 +170,20 @@
         
         var markers = []; // Масив для зберігання маркерів
 
+        // Створення маркерів
+        markersData.forEach(data => {
+            var marker = L.marker(data.coords).bindPopup(`
+                <div>
+                    <h3>${data.name}</h3>
+                    <img src="${data.image}" alt="${data.name}" style="width:100%; height:auto;"/>
+                    <p>Lost Income: ${data.lostIncome}</p>
+                    <a href="${data.link}" target="_blank">More Info</a>
+                </div>
+            `);
+            markers.push({ marker, type: data.type, lostIncome: data.lostIncome });
+            marker.addTo(map); // Додаємо маркер до карти під час ініціалізації
+        });
+
         // Обробник для фільтра за типом пошкодження
         document.getElementById('filter-icon').addEventListener('click', function() {
             var dropdown = document.getElementById('filter-dropdown');
