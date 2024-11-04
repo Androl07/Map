@@ -156,6 +156,18 @@
         Destroyed
     </div>
 </div>
+
+    <!-- Легенда для втрат доходу -->
+<div id="income-legend" style="display: none; position: fixed; bottom: 10px; left: 10px; z-index: 1000; background: rgba(255, 255, 255, 0.7); padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+    <strong>Legend</strong>
+    <div style="margin-top: 5px;">
+        <div style="background: linear-gradient(to right, rgb(255, 223, 186), rgb(255, 0, 0)); width: 150px; height: 20px;"></div>
+        <div style="display: flex; justify-content: space-between;">
+            <span>Low Loss</span>
+            <span>High Loss</span>
+        </div>
+    </div>
+</div>
     
     <script>
         var map = L.map('map', { zoomControl: false }).setView([49.265571, 35.091304], 6);
@@ -313,6 +325,22 @@ document.querySelectorAll('input[name="colorMode"]').forEach(input => {
             legend.style.display = 'block';
         } else {
             legend.style.display = 'none';
+        }
+    });
+});
+
+        // Слухач для відображення/приховування легенд
+document.querySelectorAll('input[name="colorMode"]').forEach(input => {
+    input.addEventListener('change', () => {
+        var typeLegend = document.getElementById('legend');
+        var incomeLegend = document.getElementById('income-legend');
+        
+        if (input.value === 'type') {
+            typeLegend.style.display = 'block';
+            incomeLegend.style.display = 'none';
+        } else if (input.value === 'income') {
+            incomeLegend.style.display = 'block';
+            typeLegend.style.display = 'none';
         }
     });
 });
